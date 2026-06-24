@@ -1,0 +1,22 @@
+{
+  "name": "grapevine",
+  "version": "0.0.0",
+  "description": "grapevine is a restaurant reviewing social networking app",
+  "scripts": {
+    "test": "cd backend && go test ./... && cd ../frontend && bun run test",
+    "test-ui": "cd frontend && bun run test",
+    "test-api": "cd backend && go test ./...",
+    "dev": "powershell -Command \"Start-Process cmd -ArgumentList '/k', 'cd backend && air' -WindowStyle Normal\" && cd frontend && bun run dev",
+    "postinstall": "cd frontend && bun install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eplxy/grapevine.git"
+  },
+  "author": "eplxy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/eplxy/grapevine/issues"
+  },
+  "homepage": "https://github.com/eplxy/grapevine#readme"
+}
