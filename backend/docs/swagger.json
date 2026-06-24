@@ -1,0 +1,53 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API for grapevine application",
+        "title": "grapevine API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "paths": {
+        "/ping": {
+            "get": {
+                "description": "Returns pong message",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Ping endpoint",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/router.PingResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "router.PingResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "pong"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

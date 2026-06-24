@@ -1,0 +1,35 @@
+definitions:
+  router.PingResponse:
+    properties:
+      message:
+        example: pong
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API for grapevine application
+  title: grapevine API
+  version: "1.0"
+paths:
+  /ping:
+    get:
+      consumes:
+      - application/json
+      description: Returns pong message
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/router.PingResponse'
+      summary: Ping endpoint
+      tags:
+      - health
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
