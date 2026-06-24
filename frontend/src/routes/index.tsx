@@ -1,9 +1,16 @@
-import { createFileRoute } from '@tanstack/react-router'
+import PingButton from "@/components/buttons/ping-button"
+import { createFileRoute } from "@tanstack/react-router"
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute("/")({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  return <div>Welcome home</div>
+  return (
+    <div>
+      <h1>Welcome home</h1>
+
+      <PingButton />
+    </div>
+  )
 }
