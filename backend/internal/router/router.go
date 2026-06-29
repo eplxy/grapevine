@@ -1,15 +1,23 @@
 package router
 
 import (
+	"grapevine/internal/handlers"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRouter() *gin.Engine {
+func SetupRouter(authHandler *handlers.AuthHandler) *gin.Engine {
 	router := gin.Default()
 	router.Use(cors.Default())
+
+	authGroup := router.Group("/auth")
+
+	authGroup.POST("/login", authHandler.LoginHandler)
+	authGroup.POST("/register", authHandler.RegisterHandler)
+	authGroup.POST("/refresh", authHandler.RefreshHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
