@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	_ "grapevine/docs"
+	"grapevine/internal/constants"
 	"grapevine/internal/database"
 	"grapevine/internal/handlers"
 	"grapevine/internal/router"
@@ -38,8 +39,15 @@ func main() {
 
 	userRepo := database.NewUserRepository(dbpool)
 
-	authHandler := handlers.NewAuthHandler(userRepo, os.Getenv("APP_ENV") == "prod")
+	env, err := constants.EnvironmentStringToInt(os.Getenv("APP_ENV"))
 
-	engine := router.SetupRouter(authHandler)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "an error occurred: %v\n", err)
+		os.Exit(1)
+	}
+
+	authHandler := handlers.NewAuthHandler(userRepo, env == constants.Production)
+
+	engine := router.SetupRouter(env, authHandler)
 	engine.Run()
 }
