@@ -6,7 +6,7 @@ export const setAccessToken = (token: string) => {
   accessToken = token
 }
 
-const baseApi = wretch(
+export const baseApi = wretch(
   import.meta.env.VITE_API_URL || "http://localhost:8080"
 ).options({ credentials: "include" })
 
@@ -24,6 +24,7 @@ let refreshPromise: Promise<string> | null = null
 
 const handle401Retry: ConfiguredMiddleware = (next) => async (url, opts) => {
   const res = await next(url, opts)
+
   if (res.status === 401) {
     try {
       if (!refreshPromise) {
@@ -31,9 +32,12 @@ const handle401Retry: ConfiguredMiddleware = (next) => async (url, opts) => {
           .url("/auth/refresh")
           .post()
           .json<{ access_token: string }>()
-          .then((res) => {
-            setAccessToken(res.access_token)
-            return res.access_token
+          .then((data) => {
+            if (!data.access_token) {
+              throw new Error("Silent refresh failed")
+            }
+            setAccessToken(data.access_token)
+            return data.access_token
           })
           .finally(() => {
             refreshPromise = null
@@ -53,6 +57,7 @@ const handle401Retry: ConfiguredMiddleware = (next) => async (url, opts) => {
       return await next(url, retryOpts)
     } catch (refreshError) {
       setAccessToken("")
+
       return res
     }
   }

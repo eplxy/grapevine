@@ -20,6 +20,7 @@ func SetupRouter(env constants.Environment, authHandler *handlers.AuthHandler) *
 	authGroup.POST("/login", authHandler.LoginHandler)
 	authGroup.POST("/register", authHandler.RegisterHandler)
 	authGroup.POST("/refresh", authHandler.RefreshHandler)
+	authGroup.POST("/logout", middleware.AuthMiddleware(), authHandler.LogoutHandler)
 	authGroup.GET("/me", middleware.AuthMiddleware(), authHandler.MeHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

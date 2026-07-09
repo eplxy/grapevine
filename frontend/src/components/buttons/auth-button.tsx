@@ -1,16 +1,31 @@
-import { useAuthSessionQuery } from "@/hooks/queries/auth-queries"
-import { buttonVariants } from "../ui/button"
+import {
+  useAuthSessionQuery,
+  useLogoutMutation,
+} from "@/hooks/queries/auth-queries"
+import { Button } from "../ui/button"
 
 export default function AuthButton() {
   const authSessionQuery = useAuthSessionQuery()
+  const logoutMutation = useLogoutMutation()
 
   const isLoggedIn = authSessionQuery.data?.authenticated === true
-  const href = isLoggedIn ? "/" : "/login"
-  const text = isLoggedIn ? "Logged in" : "Log in"
+  const isLoggingOut = logoutMutation.isPending
+
+  if (!isLoggedIn) {
+    return (
+      <Button asChild>
+        <a href="/login">Log in</a>
+      </Button>
+    )
+  }
 
   return (
-    <a href={href} className={buttonVariants()}>
-      {text}
-    </a>
+    <Button
+      variant="outline"
+      onClick={() => logoutMutation.mutate()}
+      disabled={isLoggingOut}
+    >
+      {isLoggingOut ? "Logging out..." : "Log out"}
+    </Button>
   )
 }

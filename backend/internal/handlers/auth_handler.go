@@ -123,18 +123,18 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 // @Produce      json
 // @Param        refresh_token header string true "Refresh token cookie value"
 // @Success      200 {object} map[string]interface{}
-// @Failure      401 {object} map[string]string
+// @Failure      500 {object} map[string]string
 // @Router       /auth/refresh [post]
 func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	cookieToken, err := c.Cookie("refresh_token")
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token missing"})
+	if err != nil || cookieToken == "" {
+		c.JSON(http.StatusOK, gin.H{"access_token": ""})
 		return
 	}
 
 	claims, err := utils.ValidateToken(cookieToken)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
+		c.JSON(http.StatusOK, gin.H{"access_token": ""})
 		return
 	}
 
@@ -160,21 +160,54 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 // @Failure      401 {object} map[string]string
 // @Router       /auth/me [get]
 func (h *AuthHandler) MeHandler(c *gin.Context) {
+
+	userID, exists := c.Get("userID")
+
+	if !exists {
+		// Return 200 OK to silence the browser console,
+		// but tell the frontend they aren't logged in.
+		c.JSON(http.StatusOK, gin.H{
+			"isAuthenticated": false,
+			"user":            nil,
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"user_id":       c.GetString("userID"),
+		"user_id":       userID,
 		"authenticated": true,
 	})
 }
 
+// @Summary      Log out of the current user session
+// @Description  Removes the refresh token cookie
+// @Tags         auth
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200 {object} map[string]interface{}
+// @Failure      401 {object} map[string]string
+// @Router       /auth/logout [post]
+func (h *AuthHandler) LogoutHandler(c *gin.Context) {
+	h.clearRefreshCookie(c)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Logged out successfully",
+	})
+}
+
+func (h *AuthHandler) getCookieDomain() string {
+	if h.isProd {
+		return "onrender.com"
+	}
+	return "localhost"
+}
+
 func (h *AuthHandler) setRefreshCookie(c *gin.Context, token string, maxAge int) {
-	domain := "localhost"
 	sameSiteMode := http.SameSiteLaxMode
 
 	if h.isProd {
 		sameSiteMode = http.SameSiteNoneMode // needed for vercel to render communication
-		domain = "onrender.com"
 	}
-
 	c.SetSameSite(sameSiteMode)
 
 	c.SetCookie(
@@ -182,8 +215,28 @@ func (h *AuthHandler) setRefreshCookie(c *gin.Context, token string, maxAge int)
 		token,
 		maxAge,
 		"/",
-		domain,
+		h.getCookieDomain(),
 		h.isProd, // Secure=true in production (required if SameSite=None)
 		true,     // HttpOnly=true
+	)
+}
+
+func (h *AuthHandler) clearRefreshCookie(c *gin.Context) {
+	sameSiteMode := http.SameSiteLaxMode
+
+	if h.isProd {
+		sameSiteMode = http.SameSiteNoneMode // needed for vercel to render communication
+	}
+
+	c.SetSameSite(sameSiteMode)
+
+	c.SetCookie(
+		"refresh_token",
+		"",
+		-1,
+		"/",
+		h.getCookieDomain(),
+		h.isProd,
+		true,
 	)
 }

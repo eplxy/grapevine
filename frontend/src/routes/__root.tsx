@@ -3,24 +3,38 @@ import {
   type GetAuthSessionResponseModel,
 } from "@/hooks/queries/auth-queries"
 import { userKeys } from "@/hooks/queries/query-keys"
-import { api } from "@/lib/api"
+import { api, baseApi, setAccessToken } from "@/lib/api"
 import type { RouterContext } from "@/router"
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
 
-const fetchAuthSession = async () => {
-  try {
-    return await api.url("/auth/me").get().json<GetAuthSessionResponseModel>()
-  } catch (error) {
-    return { authenticated: false, user_id: "" }
+const initializeAuthSession =
+  async (): Promise<GetAuthSessionResponseModel> => {
+    try {
+      const res = await baseApi
+        .url("/auth/refresh")
+        .post()
+        .json<{ access_token: string }>()
+      if (!res.access_token) {
+        // refresh failed, user is logged out
+        return { authenticated: false, user_id: "" }
+      }
+
+      // refresh token exists
+      setAccessToken(res.access_token)
+
+      return await api.url("/auth/me").get().json<GetAuthSessionResponseModel>()
+    } catch (error) {
+      console.error("Initialization failed:", error)
+      return { authenticated: false, user_id: "" }
+    }
   }
-}
 
 export const Route = createRootRouteWithContext<RouterContext>()({
   beforeLoad: async ({ context }) => {
     const session = await context.queryClient.ensureQueryData({
       queryKey: userKeys.session(),
-      queryFn: fetchAuthSession,
+      queryFn: initializeAuthSession,
       staleTime: AUTH_STALE_TIME_MS,
     })
 

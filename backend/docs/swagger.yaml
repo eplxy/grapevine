@@ -64,6 +64,28 @@ paths:
       summary: Login a user
       tags:
       - auth
+  /auth/logout:
+    post:
+      description: Removes the refresh token cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Log out of the current user session
+      tags:
+      - auth
   /auth/me:
     get:
       description: Return the current authenticated user's id.
@@ -105,8 +127,8 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "401":
-          description: Unauthorized
+        "500":
+          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
