@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useRegisterMutation } from "@/hooks/queries/user-queries"
+import { hasEmoji } from "@/lib/utils/string-utils"
 import { createFileRoute, Link, redirect } from "@tanstack/react-router"
 import { useState, type KeyboardEvent } from "react"
 
@@ -53,13 +54,21 @@ function RouteComponent() {
     if (!password) return "Password is required"
     if (password.length < 8)
       return "Your password must be at least 8 characters long"
+    if (hasEmoji(password))
+      return "Your password can't include emojis"
+    
+  }
+  const getNameErrorText = () => {
+    if (!name) return "Username is required"
+    if (hasEmoji(name)) return "Usernames can't include emojis"
   }
   const isSubmitDisabled =
     !name ||
     !password ||
     password.length < 8 ||
     submitOnCooldown ||
-    password !== passwordConfirmation
+    password !== passwordConfirmation ||
+    hasEmoji(name)
 
   const handleTextInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== "Enter" || isSubmitDisabled) return
@@ -81,7 +90,7 @@ function RouteComponent() {
               <FieldLabel htmlFor="name">Username</FieldLabel>
               <Input
                 onBlur={() => {
-                  setIsNameFieldError(name.length === 0)
+                  setIsNameFieldError(name.length === 0 || hasEmoji(name))
                 }}
                 id="name"
                 placeholder="a cool name"
@@ -92,9 +101,18 @@ function RouteComponent() {
                 }}
                 onKeyDown={handleTextInputKeyDown}
               />
-              {isNameFieldError ? (
-                <FieldError>Username is required</FieldError>
-              ) : null}
+              <>
+                {isNameFieldError ? (
+                  <FieldError>
+                    {getNameErrorText()}
+                    {hasEmoji(name) && (
+                      <span className="ml-2 text-xs text-muted-foreground italic">
+                        lmaooo get fucked wells
+                      </span>
+                    )}
+                  </FieldError>
+                ) : null}
+              </>
             </Field>
 
             <Field>
