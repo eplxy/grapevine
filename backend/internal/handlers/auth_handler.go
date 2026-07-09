@@ -197,7 +197,7 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 
 func (h *AuthHandler) getCookieDomain() string {
 	if h.isProd {
-		return "onrender.com"
+		return ""
 	}
 	return "localhost"
 }
