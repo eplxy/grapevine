@@ -64,6 +64,28 @@ paths:
       summary: Login a user
       tags:
       - auth
+  /auth/me:
+    get:
+      description: Return the current authenticated user's id.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get current user session
+      tags:
+      - auth
   /auth/refresh:
     post:
       consumes:

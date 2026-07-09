@@ -20,36 +20,43 @@ const injectToken: ConfiguredMiddleware = (next) => (url, opts) => {
   return next(url, opts)
 }
 
+let refreshPromise: Promise<string> | null = null
+
 const handle401Retry: ConfiguredMiddleware = (next) => async (url, opts) => {
-  try {
-    return await next(url, opts)
-  } catch (error: any) {
-    if (error.status === 401) {
-      try {
-        const { access_token } = await baseApi
+  const res = await next(url, opts)
+  if (res.status === 401) {
+    try {
+      if (!refreshPromise) {
+        refreshPromise = baseApi
           .url("/auth/refresh")
           .post()
           .json<{ access_token: string }>()
-
-        setAccessToken(access_token)
-
-        const retryOpts = {
-          ...opts,
-          headers: {
-            ...opts.headers,
-            Authorization: `Bearer ${access_token}`,
-          },
-        }
-
-        return await next(url, retryOpts)
-      } catch (refreshError) {
-        setAccessToken("")
-        throw refreshError
+          .then((res) => {
+            setAccessToken(res.access_token)
+            return res.access_token
+          })
+          .finally(() => {
+            refreshPromise = null
+          })
       }
-    }
 
-    throw error
+      const newAccessToken = await refreshPromise
+
+      const retryOpts = {
+        ...opts,
+        headers: {
+          ...opts.headers,
+          Authorization: `Bearer ${newAccessToken}`,
+        },
+      }
+
+      return await next(url, retryOpts)
+    } catch (refreshError) {
+      setAccessToken("")
+      return res
+    }
   }
+  return res
 }
 
 export const api = baseApi.middlewares([injectToken, handle401Retry])

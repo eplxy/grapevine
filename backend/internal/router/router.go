@@ -3,6 +3,7 @@ package router
 import (
 	"grapevine/internal/constants"
 	"grapevine/internal/handlers"
+	"grapevine/internal/middleware"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -19,6 +20,7 @@ func SetupRouter(env constants.Environment, authHandler *handlers.AuthHandler) *
 	authGroup.POST("/login", authHandler.LoginHandler)
 	authGroup.POST("/register", authHandler.RegisterHandler)
 	authGroup.POST("/refresh", authHandler.RefreshHandler)
+	authGroup.GET("/me", middleware.AuthMiddleware(), authHandler.MeHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

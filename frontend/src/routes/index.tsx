@@ -1,3 +1,4 @@
+import AuthButton from "@/components/buttons/auth-button"
 import PingButton from "@/components/buttons/ping-button"
 import { createFileRoute } from "@tanstack/react-router"
 
@@ -11,6 +12,7 @@ function RouteComponent() {
       <h1>Welcome home</h1>
 
       <PingButton />
+      <AuthButton />
     </div>
   )
 }

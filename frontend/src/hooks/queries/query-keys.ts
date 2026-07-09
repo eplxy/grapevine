@@ -12,5 +12,7 @@ export const healthKeys = {
 }
 
 export const userKeys = {
-  login: ["login"] as const
+  login: ["login"] as const,
+  auth: ["auth"] as const,
+  session: () => [...userKeys.auth, "session"] as const,
 }

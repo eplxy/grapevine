@@ -1,16 +1,14 @@
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { createFileRoute } from "@tanstack/react-router"
 import logo from "@/assets/grapevine.svg"
+import { Button } from "@/components/ui/button"
 import {
   Field,
-  FieldLabel,
-  FieldDescription,
-  FieldError,
   FieldGroup,
+  FieldLabel
 } from "@/components/ui/field"
-import { useState } from "react"
+import { Input } from "@/components/ui/input"
 import { useLoginMutation } from "@/hooks/queries/user-queries"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useState } from "react"
 
 export const Route = createFileRoute("/login")({
   component: RouteComponent,
@@ -19,13 +17,21 @@ export const Route = createFileRoute("/login")({
 function RouteComponent() {
   const [name, setName] = useState("")
   const [password, setPassword] = useState("")
+  const navigate = useNavigate()
 
   const loginMutation = useLoginMutation()
 
   const handleSubmit = (e: { preventDefault: () => void }) => {
     e.preventDefault()
 
-    loginMutation.mutate({ name, password })
+    loginMutation.mutate({
+      name,
+      password,
+    }, {
+      onSuccess: () => {
+        navigate({ to: "/", replace: true })
+      },
+    })
   }
 
   return (

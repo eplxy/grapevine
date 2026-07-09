@@ -150,6 +150,22 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	})
 }
 
+// MeHandler returns the authenticated user's identity.
+// @Summary      Get current user session
+// @Description  Return the current authenticated user's id.
+// @Tags         auth
+// @Security     BearerAuth
+// @Produce      json
+// @Success      200 {object} map[string]interface{}
+// @Failure      401 {object} map[string]string
+// @Router       /auth/me [get]
+func (h *AuthHandler) MeHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"user_id":       c.GetString("userID"),
+		"authenticated": true,
+	})
+}
+
 func (h *AuthHandler) setRefreshCookie(c *gin.Context, token string, maxAge int) {
 	domain := "localhost"
 	sameSiteMode := http.SameSiteLaxMode
