@@ -1,17 +1,9 @@
-import type { QueryClient } from "@tanstack/react-query"
-import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
+import type { GetAuthSessionResponseModel } from "@/hooks/queries/auth-queries"
 import { userKeys } from "@/hooks/queries/query-keys"
 import { api } from "@/lib/api"
-import type { GetAuthSessionResponseModel } from "@/hooks/queries/auth-queries"
-
-export interface RouterContext {
-  queryClient: QueryClient
-  auth: {
-    isAuthenticated: boolean
-    userId?: string
-  }
-}
+import type { RouterContext } from "@/router"
+import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
 
 const fetchAuthSession = async () => {
   try {
