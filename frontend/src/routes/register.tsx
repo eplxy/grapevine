@@ -54,9 +54,7 @@ function RouteComponent() {
     if (!password) return "Password is required"
     if (password.length < 8)
       return "Your password must be at least 8 characters long"
-    if (hasEmoji(password))
-      return "Your password can't include emojis"
-    
+    if (hasEmoji(password)) return "Your password can't include emojis"
   }
   const getNameErrorText = () => {
     if (!name) return "Username is required"
@@ -68,7 +66,8 @@ function RouteComponent() {
     password.length < 8 ||
     submitOnCooldown ||
     password !== passwordConfirmation ||
-    hasEmoji(name)
+    hasEmoji(name) ||
+    hasEmoji(password)
 
   const handleTextInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== "Enter" || isSubmitDisabled) return
