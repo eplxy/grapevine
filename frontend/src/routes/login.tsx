@@ -8,7 +8,12 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useLoginMutation } from "@/hooks/queries/user-queries"
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useNavigate,
+} from "@tanstack/react-router"
 import { useState, type KeyboardEvent } from "react"
 
 export const Route = createFileRoute("/login")({
@@ -78,7 +83,7 @@ function RouteComponent() {
                   setIsNameFieldError(name.length === 0)
                 }}
                 id="name"
-                placeholder="Name"
+                placeholder="a cool name"
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value)
@@ -96,7 +101,7 @@ function RouteComponent() {
               <Input
                 id="password"
                 type="password"
-                placeholder="Password"
+                placeholder="your top secret password"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value)
@@ -120,6 +125,13 @@ function RouteComponent() {
               ) : null}
             </Field>
           </FieldGroup>
+          <Link to="/register" className="mt-4 w-full text-muted-foreground">
+            New to{" "}
+            <span className="linear bg-linear-to-br from-green-800 to-lime-600 bg-clip-text text-transparent">
+              grapevine
+            </span>
+            ? <span className="text-accent-foreground">Register here</span>
+          </Link>
         </div>
         <div className="hidden h-full w-[50%] md:flex">
           <div className="flex h-full w-full items-center justify-center rounded-2xl bg-muted">
