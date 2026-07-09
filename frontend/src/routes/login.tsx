@@ -8,11 +8,19 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useLoginMutation } from "@/hooks/queries/user-queries"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { useState, type KeyboardEvent } from "react"
 
 export const Route = createFileRoute("/login")({
   component: RouteComponent,
+  beforeLoad: ({ context }) => {
+    if (context.auth.isAuthenticated) {
+      throw redirect({
+        to: "/",
+        replace: true,
+      })
+    }
+  },
 })
 
 function RouteComponent() {
