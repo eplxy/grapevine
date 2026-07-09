@@ -7,6 +7,8 @@ export interface GetAuthSessionResponseModel {
   authenticated: boolean
 }
 
+export const AUTH_STALE_TIME_MS = 1000 * 60 * 5
+
 export const useAuthSessionQuery = () => {
   return useQuery({
     queryKey: userKeys.session(),
@@ -14,5 +16,6 @@ export const useAuthSessionQuery = () => {
       return await api.url("/auth/me").get().json<GetAuthSessionResponseModel>()
     },
     retry: false,
+    staleTime: AUTH_STALE_TIME_MS,
   })
 }

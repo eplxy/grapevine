@@ -1,4 +1,7 @@
-import type { GetAuthSessionResponseModel } from "@/hooks/queries/auth-queries"
+import {
+  AUTH_STALE_TIME_MS,
+  type GetAuthSessionResponseModel,
+} from "@/hooks/queries/auth-queries"
 import { userKeys } from "@/hooks/queries/query-keys"
 import { api } from "@/lib/api"
 import type { RouterContext } from "@/router"
@@ -18,6 +21,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     const session = await context.queryClient.ensureQueryData({
       queryKey: userKeys.session(),
       queryFn: fetchAuthSession,
+      staleTime: AUTH_STALE_TIME_MS,
     })
 
     return {
