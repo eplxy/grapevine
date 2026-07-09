@@ -9,7 +9,7 @@ export interface GetPingResponseModel {
 export const getPingQuery = ({ waitForClick }: { waitForClick: boolean }) => {
   return useQuery({
     queryKey: healthKeys.ping,
-    queryFn: () => api().get("/ping").json<GetPingResponseModel>(),
+    queryFn: () => api.url("/ping").get().json<GetPingResponseModel>(),
     enabled: !waitForClick,
   })
 }

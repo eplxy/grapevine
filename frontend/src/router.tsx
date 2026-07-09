@@ -2,6 +2,14 @@ import { QueryClient } from "@tanstack/react-query"
 import { createRouter } from "@tanstack/react-router"
 import { routeTree } from "./routeTree.gen"
 
+export interface RouterContext {
+  queryClient: QueryClient
+  auth: {
+    isAuthenticated: boolean
+    userId?: string
+  }
+}
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -15,11 +23,14 @@ export const queryClient = new QueryClient({
   },
 })
 
+const initialRouterContext: RouterContext = {
+  queryClient,
+  auth: { isAuthenticated: false },
+}
+
 export const router = createRouter({
   routeTree,
-  context: {
-    queryClient,
-  },
+  context: initialRouterContext,
   defaultPreloadStaleTime: 0,
 })
 

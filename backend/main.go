@@ -1,9 +1,17 @@
 package main
 
 import (
+	"context"
+	"fmt"
+	_ "grapevine/docs"
+	"grapevine/internal/constants"
+	"grapevine/internal/database"
+	"grapevine/internal/handlers"
 	"grapevine/internal/router"
 	"log"
+	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
@@ -22,6 +30,24 @@ func main() {
 		log.Println("No .env file found")
 	}
 
-	router := router.SetupRouter()
-	router.Run() // listens on 0.0.0.0:8080 by default
+	dbpool, err := pgxpool.New(context.Background(), os.Getenv("DATABASE_URL"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to create connection pool: %v\n", err)
+		os.Exit(1)
+	}
+	defer dbpool.Close()
+
+	userRepo := database.NewUserRepository(dbpool)
+
+	env, err := constants.EnvironmentStringToInt(os.Getenv("APP_ENV"))
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "an error occurred: %v\n", err)
+		os.Exit(1)
+	}
+
+	authHandler := handlers.NewAuthHandler(userRepo, env == constants.Production)
+
+	engine := router.SetupRouter(env, authHandler)
+	engine.Run()
 }
