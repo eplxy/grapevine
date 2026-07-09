@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	"grapevine/internal/database"
+	"grapevine/internal/responses"
 	"grapevine/internal/utils"
 	"net/http"
 
@@ -42,19 +42,19 @@ type authRequest struct {
 func (h *AuthHandler) RegisterHandler(c *gin.Context) {
 	var req authRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		responses.WriteBadRequest(c, "invalid_request", err.Error())
 		return
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process security credentials"})
+		responses.WriteError(c, http.StatusInternalServerError, "password_hash_failed", "Failed to process security credentials")
 		return
 	}
 
 	id, err := h.repo.CreateUser(c.Request.Context(), req.Name, string(hashedPassword))
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("A user with the name '%s' is already registered. Error: %v", req.Name, err)})
+		responses.WriteError(c, http.StatusConflict, "user_exists", "A user with that name is already registered")
 		return
 	}
 
@@ -76,32 +76,32 @@ func (h *AuthHandler) RegisterHandler(c *gin.Context) {
 func (h *AuthHandler) LoginHandler(c *gin.Context) {
 	var req authRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		responses.WriteBadRequest(c, "invalid_request", err.Error())
 		return
 	}
 
 	userID, hashedPassword, err := h.repo.GetUserByName(c.Request.Context(), req.Name)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		responses.WriteError(c, http.StatusUnauthorized, "invalid_credentials", "Invalid email or password")
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password))
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		responses.WriteError(c, http.StatusUnauthorized, "invalid_credentials", "Invalid email or password")
 		return
 	}
 
 	// Issue Tokens
 	accessToken, err := utils.GenerateAccessToken(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate access token"})
+		responses.WriteError(c, http.StatusInternalServerError, "access_token_failed", "Failed to generate access token")
 		return
 	}
 
 	refreshToken, err := utils.GenerateRefreshToken(userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate refresh token"})
+		responses.WriteError(c, http.StatusInternalServerError, "refresh_token_failed", "Failed to generate refresh token")
 		return
 	}
 
@@ -141,7 +141,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	// token is valid, issue a new short-lived access token
 	newAccessToken, err := utils.GenerateAccessToken(claims.UserID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to rotate access token"})
+		responses.WriteError(c, http.StatusInternalServerError, "access_token_failed", "Failed to rotate access token")
 		return
 	}
 

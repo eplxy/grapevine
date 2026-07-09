@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query"
 import { queryClient } from "@/router"
 import { userKeys } from "./query-keys"
 import { toast } from "react-toastify"
+import { getErrorMessage } from "@/lib/utils/error-utils"
 
 export interface PostLoginRequestModel {
   name: string
@@ -18,8 +19,16 @@ export interface PostLoginResponseModel {
 export const useLoginMutation = () => {
   return useMutation({
     mutationKey: userKeys.login,
-    mutationFn: (body: PostLoginRequestModel) =>
-      api.url("/auth/login").post(body).json<PostLoginResponseModel>(),
+    mutationFn: async (body: PostLoginRequestModel) => {
+      try {
+        return await api
+          .url("/auth/login")
+          .post(body)
+          .json<PostLoginResponseModel>()
+      } catch (err) {
+        throw new Error(getErrorMessage(err))
+      }
+    },
     onSuccess: ({ access_token }) => {
       setAccessToken(access_token)
       queryClient.invalidateQueries({ queryKey: userKeys.session() })
