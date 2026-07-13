@@ -16,7 +16,7 @@ createRoot(document.getElementById("root")!).render(
         <TooltipProvider>
           <WrappedToastContainer stacked={true} />
           <RouterProvider router={router} />
-          <ReactQueryDevtools initialIsOpen={false} />
+          {/*<ReactQueryDevtools initialIsOpen={false} />*/}
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
