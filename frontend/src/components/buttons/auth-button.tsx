@@ -3,8 +3,16 @@ import {
   useLogoutMutation,
 } from "@/hooks/queries/auth-queries"
 import { Button } from "../ui/button"
+import type { ComponentPropsWithRef, ReactNode } from "react"
+import { LogIn, LogOut } from "lucide-react"
 
-export default function AuthButton() {
+type AuthButtonProps = {
+  loggedInComponent?: ReactNode
+  hideIfLoggedIn?: boolean
+} & ComponentPropsWithRef<"button">
+
+export default function AuthButton(props: AuthButtonProps) {
+  const { hideIfLoggedIn, loggedInComponent, ...rest } = props
   const authSessionQuery = useAuthSessionQuery()
   const logoutMutation = useLogoutMutation()
 
@@ -13,18 +21,27 @@ export default function AuthButton() {
 
   if (!isLoggedIn) {
     return (
-      <Button asChild>
-        <a href="/login">Log in</a>
+      <Button variant="secondary" asChild {...rest}>
+        <a href="/login">
+          <LogIn />
+          <span>Log in</span>
+        </a>
       </Button>
     )
+  } else if (hideIfLoggedIn) {
+    return null
   }
+
+  if (loggedInComponent) return loggedInComponent
 
   return (
     <Button
-      variant="outline"
+      variant="secondary"
       onClick={() => logoutMutation.mutate()}
       disabled={isLoggingOut}
+      {...rest}
     >
+      <LogOut />
       {isLoggingOut ? "Logging out..." : "Log out"}
     </Button>
   )

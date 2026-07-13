@@ -16,7 +16,7 @@ import {
 } from "@tanstack/react-router"
 import { useState, type KeyboardEvent } from "react"
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/(auth)/login")({
   component: RouteComponent,
   beforeLoad: ({ context }) => {
     if (context.auth.isAuthenticated) {

@@ -1,12 +1,10 @@
-import {
-  AUTH_STALE_TIME_MS,
-  type GetAuthSessionResponseModel,
-} from "@/hooks/queries/auth-queries"
+import { type GetAuthSessionResponseModel } from "@/hooks/queries/auth-queries"
 import { userKeys } from "@/hooks/queries/query-keys"
 import { api, baseApi, setAccessToken } from "@/lib/api"
 import type { RouterContext } from "@/router"
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
+
+export const AUTH_STALE_TIME_MS = 1000 * 60 * 5
 
 const initializeAuthSession =
   async (): Promise<GetAuthSessionResponseModel> => {
@@ -54,7 +52,6 @@ function RootComponent() {
       <div className="flex min-h-svh">
         <Outlet />
       </div>
-      <TanStackRouterDevtools />
     </>
   )
 }
