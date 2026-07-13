@@ -1,5 +1,4 @@
 import { Heart, MessageCircle, Share } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Card, CardContent, CardFooter, CardHeader } from "../ui/card"
 import UserAvatar from "../user-avatar"
 
@@ -14,7 +13,7 @@ export default function Post(props: PostProps) {
       className="rounded-none border-b border-none pb-4 shadow-none"
     >
       <CardHeader className="flex flex-row items-center gap-4">
-        <UserAvatar/>
+        <UserAvatar />
         <div className="flex flex-col">
           <span className="text-sm font-semibold">Username</span>
           <span className="text-xs text-muted-foreground">2 hours ago</span>
