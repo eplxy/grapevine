@@ -11,7 +11,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRouter(env constants.Environment, authHandler *handlers.AuthHandler) *gin.Engine {
+func SetupRouter(env constants.Environment, authHandler *handlers.AuthHandler, postHandler *handlers.PostHandler) *gin.Engine {
 	router := gin.Default()
 	router.Use(cors.New(getCorsConfig(env)))
 
@@ -22,6 +22,13 @@ func SetupRouter(env constants.Environment, authHandler *handlers.AuthHandler) *
 	authGroup.POST("/refresh", authHandler.RefreshHandler)
 	authGroup.POST("/logout", middleware.AuthMiddleware(), authHandler.LogoutHandler)
 	authGroup.GET("/me", middleware.AuthMiddleware(), authHandler.MeHandler)
+
+	postGroup := router.Group("/posts")
+
+	postGroup.GET("", postHandler.GetHomeFeedHandler)
+	postGroup.POST("/note", middleware.AuthMiddleware(), postHandler.CreateNoteHandler)
+	postGroup.POST("/review", middleware.AuthMiddleware(), postHandler.CreateReviewHandler)
+	postGroup.GET("/:id", postHandler.GetPostByIDHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

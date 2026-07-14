@@ -10,6 +10,90 @@ definitions:
     - name
     - password
     type: object
+  handlers.createNoteRequest:
+    properties:
+      content:
+        type: string
+      media_urls:
+        items:
+          type: string
+        type: array
+    required:
+    - content
+    type: object
+  handlers.createReviewRequest:
+    properties:
+      content:
+        type: string
+      location:
+        $ref: '#/definitions/handlers.locationUpsertInfo'
+      media_urls:
+        items:
+          type: string
+        type: array
+      rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+    required:
+    - location
+    - rating
+    type: object
+  handlers.locationUpsertInfo:
+    properties:
+      address:
+        type: string
+      google_place_id:
+        type: string
+      lat:
+        type: number
+      lng:
+        type: number
+      location_type:
+        type: string
+      name:
+        type: string
+    required:
+    - address
+    - google_place_id
+    - lat
+    - lng
+    - name
+    type: object
+  models.FeedItem:
+    properties:
+      author_id:
+        type: integer
+      author_name:
+        type: string
+      content:
+        type: string
+      created_at:
+        type: string
+      location_id:
+        type: integer
+      location_name:
+        type: string
+      media:
+        items:
+          $ref: '#/definitions/models.MediaItem'
+        type: array
+      post_id:
+        type: integer
+      post_type:
+        description: '"note" or "review"'
+        type: string
+      rating:
+        type: integer
+    type: object
+  models.MediaItem:
+    properties:
+      media_type:
+        description: '"image" or "video"'
+        type: string
+      url:
+        type: string
+    type: object
   router.PingResponse:
     properties:
       message:
@@ -192,6 +276,162 @@ paths:
       summary: Ping endpoint
       tags:
       - health
+  /posts:
+    get:
+      description: Returns paginated posts for the main feed.
+      parameters:
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.FeedItem'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Home Feed
+      tags:
+      - posts
+  /posts/{id}:
+    get:
+      description: Fetches post details including media and location info.
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.FeedItem'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Post by ID
+      tags:
+      - posts
+  /posts/note:
+    post:
+      consumes:
+      - application/json
+      description: Create a post not attached to a location.
+      parameters:
+      - description: Note payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.createNoteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a Note
+      tags:
+      - posts
+  /posts/review:
+    post:
+      consumes:
+      - application/json
+      description: Saves Google location data to cache, then creates a review attached
+        to it.
+      parameters:
+      - description: Review payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.createReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a Review
+      tags:
+      - posts
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

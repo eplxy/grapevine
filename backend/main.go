@@ -38,6 +38,8 @@ func main() {
 	defer dbpool.Close()
 
 	userRepo := database.NewUserRepository(dbpool)
+	postRepo := database.NewPostRepository(dbpool)
+	locationRepo := database.NewLocationRepository(dbpool)
 
 	env, err := constants.EnvironmentStringToInt(os.Getenv("APP_ENV"))
 
@@ -47,7 +49,8 @@ func main() {
 	}
 
 	authHandler := handlers.NewAuthHandler(userRepo, env == constants.Production)
+	postHandler := handlers.NewPostHandler(postRepo, locationRepo)
 
-	engine := router.SetupRouter(env, authHandler)
+	engine := router.SetupRouter(env, authHandler, postHandler)
 	engine.Run()
 }

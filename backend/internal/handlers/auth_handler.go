@@ -161,9 +161,10 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 // @Router       /auth/me [get]
 func (h *AuthHandler) MeHandler(c *gin.Context) {
 
-	userID, exists := c.Get("userID")
+	userID, err := GetUserIDAsInt(c)
+	if err != nil {
+		responses.WriteError(c, http.StatusUnauthorized, "unauthorized", err.Error())
 
-	if !exists {
 		// Return 200 OK to silence the browser console,
 		// but tell the frontend they aren't logged in.
 		c.JSON(http.StatusOK, gin.H{
