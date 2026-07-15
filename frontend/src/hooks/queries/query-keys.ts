@@ -18,3 +18,7 @@ export const userKeys = {
   session: () => [...userKeys.auth, "session"] as const,
   logout: () => [...userKeys.auth, "logout"] as const
 }
+
+export const postKeys = {
+  getFeed: (limit: number, offset: number) => ["feed", limit, offset]
+}
