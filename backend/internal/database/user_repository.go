@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -21,13 +22,14 @@ func NewUserRepository(db *pgxpool.Pool) *UserRepository {
 
 func (r *UserRepository) CreateUser(ctx context.Context, name, passwordHash string) (string, error) {
 	query := `
-		INSERT INTO users (name, password_hash) 
-		VALUES ($1, $2) 
+		INSERT INTO users (name, password_hash)
+		VALUES ($1, $2)
 		RETURNING id`
 
 	var id string
 	err := r.db.QueryRow(ctx, query, name, passwordHash).Scan(&id)
 	if err != nil { // already exists
+		fmt.Printf("error: %s", err.Error())
 		return "", err
 	}
 
@@ -36,8 +38,8 @@ func (r *UserRepository) CreateUser(ctx context.Context, name, passwordHash stri
 
 func (r *UserRepository) GetUserByName(ctx context.Context, name string) (string, string, error) {
 	query := `
-		SELECT id, password_hash 
-		FROM users 
+		SELECT id, password_hash
+		FROM users
 		WHERE name = $1`
 
 	var id, hash string

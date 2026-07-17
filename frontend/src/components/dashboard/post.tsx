@@ -10,6 +10,8 @@ type PostProps = {
 
 export default function Post(props: PostProps) {
   const { feedItem } = props
+  const likeCount = 0
+  const replyCount = 0
   return (
     <Card className="rounded-none border-b border-none pb-4 shadow-none">
       <CardHeader className="flex flex-row items-center gap-4">
@@ -34,10 +36,10 @@ export default function Post(props: PostProps) {
       </CardContent>
       <CardFooter className="flex gap-6 text-muted-foreground">
         <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
-          <Heart className="h-5 w-5" /> 1.2k
+          <Heart className="h-5 w-5" /> {likeCount}
         </button>
         <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
-          <MessageCircle className="h-5 w-5" /> 48
+          <MessageCircle className="h-5 w-5" /> {replyCount}
         </button>
         <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
           <Share className="h-5 w-5" />

@@ -21,8 +21,13 @@ export default function DashboardContent() {
 }
 
 function NewPostBar() {
+  const handleClick = () => {}
+
   return (
-    <div className="mx-3 hidden min-h-16 items-center gap-4 rounded-lg border border-border bg-card px-4 shadow-xs sm:flex">
+    <div
+      onClick={handleClick}
+      className="mx-3 hidden min-h-16 items-center gap-4 rounded-lg border border-border bg-card px-4 shadow-xs hover:border-neutral-700 sm:flex"
+    >
       <UserAvatar />
       <span className="text-muted-foreground">What's new?</span>
     </div>

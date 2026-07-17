@@ -83,7 +83,8 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="h-12">
-              <AuthButton hideIfLoggedIn />
+              <AuthButton />
+              {/*<AuthButton hideIfLoggedIn />*/}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
