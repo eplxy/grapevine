@@ -9,10 +9,19 @@ const (
 	PostTypeReview PostType = "review"
 )
 
+type PostVisibility string
+
+const (
+	PostVisibilityPublic    PostVisibility = "public"
+	PostVisibilityFollowers PostVisibility = "followers-only"
+	PostVisibilityPrivate   PostVisibility = "private"
+)
+
 type Post struct {
-	ID        int
-	CreatedAt time.Time
-	UserID    int
-	Type      PostType
-	Content   string
+	ID         int
+	CreatedAt  time.Time
+	UserID     int
+	Type       PostType
+	Content    string
+	Visibility PostVisibility
 }

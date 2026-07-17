@@ -3,6 +3,7 @@ import { useState } from "react"
 import Post from "./post"
 
 export default function PostList() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [page, setPage] = useState<number>(1)
 
   const feedQuery = useFeedQuery(page * 10, (page - 1) * 10)
