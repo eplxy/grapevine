@@ -10,7 +10,8 @@ import (
 )
 
 type Claims struct {
-	UserID string `json:"user_id"`
+	UserID   string `json:"user_id"`
+	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
 
@@ -24,9 +25,10 @@ func getJWTSecret() string {
 }
 
 // GenerateAccessToken creates a short-lived token (15 mins) for the frontend to hold in memory
-func GenerateAccessToken(userID string) (string, error) {
+func GenerateAccessToken(userID string, username string) (string, error) {
 	claims := &Claims{
-		UserID: userID,
+		UserID:   userID,
+		Username: username,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -38,9 +40,11 @@ func GenerateAccessToken(userID string) (string, error) {
 }
 
 // GenerateRefreshToken creates a long-lived token (7 days) for the HttpOnly cookie
-func GenerateRefreshToken(userID string) (string, error) {
+func GenerateRefreshToken(userID string, username string) (string, error) {
 	claims := &Claims{
-		UserID: userID,
+		UserID:   userID,
+		Username: username,
+
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -52,7 +56,7 @@ func GenerateRefreshToken(userID string) (string, error) {
 
 // ValidateToken parses and verifies the token signature
 func ValidateToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}

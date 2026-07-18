@@ -1,7 +1,7 @@
 import logo from "@/assets/grapevine.svg"
 import AuthButton from "@/components/buttons/auth-button"
 import { Link, useLocation } from "@tanstack/react-router"
-import { Home, Map, Pencil, User } from "lucide-react"
+import { Home, Map, Menu, Moon, Pencil, Sun, SunMoon, User } from "lucide-react"
 import type { ReactNode } from "react"
 import { Button } from "./ui/button"
 import {
@@ -15,6 +15,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "./ui/sidebar"
+
+import {
+  Popover,
+  PopoverContent,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { useTheme } from "./theme-provider"
+import { Label } from "./ui/label"
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group"
 
 export interface NavMapItemModel {
   title: string
@@ -63,6 +73,7 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <MorePopoverButton />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -84,11 +95,65 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="h-12">
               <AuthButton />
-              {/*<AuthButton hideIfLoggedIn />*/}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
+  )
+}
+
+function MorePopoverButton() {
+  const { theme, setTheme } = useTheme()
+
+  return (
+    <SidebarMenuItem key={"More"}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <SidebarMenuButton className="h-12 [&>svg]:size-6">
+            <Menu />
+
+            <span className="ml-2">More</span>
+          </SidebarMenuButton>
+        </PopoverTrigger>
+        <PopoverContent side="right">
+          <PopoverTitle>Extra options</PopoverTitle>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <div className="grid grid-cols-2 items-center gap-4">
+                <Label>Display theme</Label>
+                <ToggleGroup
+                  type="single"
+                  defaultValue={theme || "system"}
+                  onValueChange={setTheme}
+                >
+                  <ToggleGroupItem
+                    title="Light"
+                    value="light"
+                    aria-label="Toggle light"
+                  >
+                    <Sun />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    title="Dark"
+                    value="dark"
+                    aria-label="Toggle dark"
+                  >
+                    <Moon />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    title="System Default"
+                    value="system"
+                    aria-label="Toggle system default"
+                  >
+                    <SunMoon />
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </SidebarMenuItem>
   )
 }

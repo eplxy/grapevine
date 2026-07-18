@@ -10,7 +10,9 @@ export default function PostList() {
   return (
     <div className="flex flex-col gap-6 px-4">
       {feedQuery.isSuccess &&
-        feedQuery.data.map((post) => <Post feedItem={post} />)}
+        feedQuery.data.map((post) => (
+          <Post key={post.post_id} feedItem={post} />
+        ))}
     </div>
   )
 }

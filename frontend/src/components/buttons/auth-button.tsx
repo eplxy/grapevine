@@ -4,7 +4,7 @@ import {
 } from "@/hooks/queries/auth-queries"
 import { Button } from "../ui/button"
 import type { ComponentPropsWithRef, ReactNode } from "react"
-import { LogIn, LogOut } from "lucide-react"
+import { Loader, LogIn, LogOut } from "lucide-react"
 
 type AuthButtonProps = {
   loggedInComponent?: ReactNode
@@ -41,8 +41,8 @@ export default function AuthButton(props: AuthButtonProps) {
       disabled={isLoggingOut}
       {...rest}
     >
-      <LogOut />
-      {isLoggingOut ? "Logging out..." : "Log out"}
+      {isLoggingOut ? <Loader /> : <LogOut />}
+      <span>{isLoggingOut ? "Logging out..." : "Log out"}</span>
     </Button>
   )
 }

@@ -15,7 +15,7 @@ const initializeAuthSession =
         .json<{ access_token: string }>()
       if (!res.access_token) {
         // refresh failed, user is logged out
-        return { authenticated: false, user_id: "" }
+        return { authenticated: false, user_id: "", username: "" }
       }
 
       // refresh token exists
@@ -24,7 +24,7 @@ const initializeAuthSession =
       return await api.url("/auth/me").get().json<GetAuthSessionResponseModel>()
     } catch (error) {
       console.error("Initialization failed:", error)
-      return { authenticated: false, user_id: "" }
+      return { authenticated: false, user_id: "", username: "" }
     }
   }
 

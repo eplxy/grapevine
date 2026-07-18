@@ -7,6 +7,7 @@ import { AUTH_STALE_TIME_MS } from "@/routes/__root"
 
 export interface GetAuthSessionResponseModel {
   user_id: string
+  username: string
   authenticated: boolean
 }
 

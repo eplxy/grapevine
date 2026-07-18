@@ -14,6 +14,7 @@ type UserRepository struct {
 type UserDomain interface {
 	CreateUser(ctx context.Context, name, passwordHash string) (string, error)
 	GetUserByName(ctx context.Context, name string) (string, string, error) // returns id, password_hash, error
+	GetUserNameByID(ctx context.Context, id int) (string, error)
 }
 
 func NewUserRepository(db *pgxpool.Pool) *UserRepository {
@@ -49,4 +50,19 @@ func (r *UserRepository) GetUserByName(ctx context.Context, name string) (string
 	}
 
 	return id, hash, nil
+}
+
+func (r *UserRepository) GetUserNameByID(ctx context.Context, id int) (string, error) {
+	query := `
+		SELECT name
+		FROM users
+		WHERE id = $1`
+
+	var name string
+	err := r.db.QueryRow(ctx, query, id).Scan(&name)
+	if err != nil {
+		return "", err
+	}
+
+	return name, nil
 }
