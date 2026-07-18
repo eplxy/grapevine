@@ -1,25 +1,26 @@
-import { Heart, MessageCircle, Share } from "lucide-react"
-import { Card, CardContent, CardFooter, CardHeader } from "../ui/card"
-import UserAvatar from "../user-avatar"
 import type { FeedItemModel } from "@/models/models"
-import dayjs from "dayjs"
-import { useMemo } from "react"
+import { EDITOR_CLASSES } from "@/styles/styles"
 import { generateHTML } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
-import { EDITOR_CLASSES } from "@/styles/styles"
+import dayjs from "dayjs"
+import relativeTime from "dayjs/plugin/relativeTime"
+import { useMemo } from "react"
+import { Card, CardContent, CardHeader } from "../ui/card"
+import UserAvatar from "../user-avatar"
 
 type PostProps = {
   feedItem: FeedItemModel
 }
 
+dayjs.extend(relativeTime)
+
 export default function Post(props: PostProps) {
   const { feedItem } = props
-  const likeCount = 0
-  const replyCount = 0
+  // const likeCount = 0
+  // const replyCount = 0
 
   const html = useMemo(() => {
     try {
-      // TypeScript now knows item.content is a JSONContent object
       if (!props.feedItem.content) return ""
 
       return generateHTML(props.feedItem.content, [StarterKit])
@@ -35,13 +36,21 @@ export default function Post(props: PostProps) {
         <UserAvatar />
         <div className="flex flex-col">
           <span className="text-sm font-semibold">{feedItem.author_name}</span>
-          <span className="text-xs text-muted-foreground">
-            {dayjs(feedItem.created_at).format("MMMM D, YYYY")}
+          <span
+            className="text-xs text-muted-foreground"
+            title={dayjs(feedItem.created_at).format("MMMM D, YYYY, hh:mm")}
+          >
+            {dayjs(feedItem.created_at).fromNow()}
           </span>
         </div>
       </CardHeader>
-      <CardContent className="pb-4">
-        {!!feedItem.content && <div className={EDITOR_CLASSES} dangerouslySetInnerHTML={{ __html: html }} />}
+      <CardContent>
+        {!!feedItem.content && (
+          <div
+            className={EDITOR_CLASSES}
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        )}
         {feedItem.media && feedItem.media.length > 0 && (
           <div className="flex aspect-video w-full items-center justify-center rounded-md bg-muted">
             Image Placeholder
@@ -49,7 +58,7 @@ export default function Post(props: PostProps) {
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex gap-6 text-muted-foreground">
+      {/*<CardFooter className="flex gap-6 text-muted-foreground">
         <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
           <Heart className="h-5 w-5" /> {likeCount}
         </button>
@@ -59,7 +68,7 @@ export default function Post(props: PostProps) {
         <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
           <Share className="h-5 w-5" />
         </button>
-      </CardFooter>
+      </CardFooter>*/}
     </Card>
   )
 }

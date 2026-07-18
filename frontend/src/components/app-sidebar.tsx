@@ -25,6 +25,7 @@ import {
 import { useTheme } from "./theme-provider"
 import { Label } from "./ui/label"
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group"
+import CreateNoteDialog from "./dashboard/create-note-dialog"
 
 export interface NavMapItemModel {
   title: string
@@ -80,12 +81,16 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Button onClick={() => {}} variant="outline" className="h-10">
-                  <Pencil className="transition-all group-data-[collapsible=icon]:ml-2 group-data-[collapsible=icon]:size-5!" />
-                  <span>New</span>
-                </Button>
-              </SidebarMenuButton>
+              <CreateNoteDialog
+                triggerComponent={
+                  <SidebarMenuButton asChild>
+                    <Button variant="outline" className="h-10">
+                      <Pencil className="transition-all group-data-[collapsible=icon]:ml-2 group-data-[collapsible=icon]:size-5!" />
+                      <span>New</span>
+                    </Button>
+                  </SidebarMenuButton>
+                }
+              />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>

@@ -16,6 +16,8 @@ import { Placeholder } from "@tiptap/extensions"
 import { EditorContent, useEditor } from "@tiptap/react"
 
 import { useUploadNoteMutation } from "@/hooks/queries/post-queries"
+import { EDITOR_CLASSES } from "@/styles/styles"
+import { useNavigate } from "@tanstack/react-router"
 import StarterKit from "@tiptap/starter-kit"
 import clsx from "clsx"
 import {
@@ -27,12 +29,16 @@ import {
   Minimize2,
   Strikethrough,
 } from "lucide-react"
-import { useState, type Dispatch, type SetStateAction } from "react"
+import {
+  useState,
+  type Dispatch,
+  type MouseEvent,
+  type SetStateAction,
+} from "react"
 import { Button } from "../ui/button"
 import { Toggle } from "../ui/toggle"
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group"
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
-import { EDITOR_CLASSES } from "@/styles/styles"
 
 type CreateNoteDialogProps = {
   triggerComponent?: JSX.Element
@@ -55,6 +61,15 @@ const getRandomPlaceholder = () => {
 export default function CreateNoteDialog(props: CreateNoteDialogProps) {
   const sessionQuery = useAuthSessionQuery()
 
+  const isLoggedIn = sessionQuery.data?.authenticated === true
+  const navigate = useNavigate()
+  const handleTriggerClick = (ev: MouseEvent) => {
+    if (!isLoggedIn) {
+      ev.preventDefault()
+      navigate({ to: "/login" })
+    }
+  }
+
   const user = sessionQuery.data
 
   const [isOpen, setIsOpen] = useState<boolean>(false)
@@ -62,7 +77,10 @@ export default function CreateNoteDialog(props: CreateNoteDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild={!!props.triggerComponent}>
+      <DialogTrigger
+        asChild={!!props.triggerComponent}
+        onClick={handleTriggerClick}
+      >
         {props.triggerComponent || "New"}
       </DialogTrigger>
       <DialogContent
@@ -95,7 +113,6 @@ interface InnerProps {
   closeDialog: () => void
 }
 
-
 function CreateNoteDialogInnerContent(props: InnerProps) {
   const [isEditorEmpty, setIsEditorEmpty] = useState<boolean>(true)
   const [activeFormats, setActiveFormats] = useState<string[]>([]) // for editor marks, e.g. bold/italic/strikethrough
@@ -116,8 +133,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
     ],
     editorProps: {
       attributes: {
-        class:
-          "focus:outline-none h-full max-w-full" + " " + EDITOR_CLASSES,
+        class: "focus:outline-none h-full max-w-full" + " " + EDITOR_CLASSES,
       },
     },
     onTransaction: ({ editor }) => {

@@ -1,4 +1,5 @@
-import { useState, type MouseEvent } from "react"
+import { useAuthSessionQuery } from "@/hooks/queries/auth-queries"
+import { useState } from "react"
 import {
   Select,
   SelectContent,
@@ -8,10 +9,8 @@ import {
   SelectValue,
 } from "../ui/select"
 import UserAvatar from "../user-avatar"
-import PostList from "./post-list"
 import CreateNoteDialog from "./create-note-dialog"
-import { useAuthSessionQuery } from "@/hooks/queries/auth-queries"
-import { useNavigate } from "@tanstack/react-router"
+import PostList from "./post-list"
 
 export default function DashboardContent() {
   return (
@@ -24,14 +23,6 @@ export default function DashboardContent() {
 }
 
 function NewPostBar() {
-  const navigate = useNavigate()
-  const handleClick = (ev: MouseEvent<HTMLDivElement>) => {
-    if (!isLoggedIn) {
-      ev.preventDefault()
-      navigate({ to: "/login" })
-    }
-  }
-
   const authSessionQuery = useAuthSessionQuery()
   const isLoggedIn = authSessionQuery.data?.authenticated === true
 
@@ -42,10 +33,7 @@ function NewPostBar() {
   return (
     <CreateNoteDialog
       triggerComponent={
-        <div
-          onClick={handleClick}
-          className="mx-4 hidden min-h-16 items-center gap-4 rounded-lg border border-border bg-card px-4 shadow-xs hover:border-neutral-700 sm:flex"
-        >
+        <div className="mx-4 hidden min-h-16 items-center gap-4 rounded-lg border border-border bg-card px-4 shadow-xs hover:border-neutral-700 sm:flex">
           <UserAvatar />
           <span className="text-muted-foreground">{getText()}</span>
         </div>
