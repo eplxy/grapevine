@@ -16,9 +16,11 @@ export const userKeys = {
   register: ["register"] as const,
   auth: ["auth"] as const,
   session: () => [...userKeys.auth, "session"] as const,
-  logout: () => [...userKeys.auth, "logout"] as const
+  logout: () => [...userKeys.auth, "logout"] as const,
 }
 
 export const postKeys = {
-  getFeed: (limit: number, offset: number) => ["feed", limit, offset]
+  posts: ["posts"] as const,
+  getFeed: (limit: number, offset: number) => ["feed", limit, offset],
+  uploadNote: () => [...postKeys.posts, "upload", "note"] as const,
 }

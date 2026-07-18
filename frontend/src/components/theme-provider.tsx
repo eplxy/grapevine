@@ -95,6 +95,9 @@ export function ThemeProvider({
 
   const setTheme = React.useCallback(
     (nextTheme: Theme) => {
+      if (!nextTheme) return
+      if (!isTheme(nextTheme)) return
+
       localStorage.setItem(storageKey, nextTheme)
       setThemeState(nextTheme)
     },

@@ -12,3 +12,28 @@ export const useFeedQuery = (limit: number, offset: number) => {
     staleTime: Infinity,
   })
 }
+
+
+// interface PostUploadNoteRequestModel  {
+//   content: string
+//   media_urls: string[]
+// }
+
+// export const useUploadNoteMutation = () => {
+
+//   return useMutation({
+//     mutationKey: postKeys.uploadNote(),
+//     mutationFn: (body: PostUploadNoteRequestModel) => {
+
+
+//     },
+//     onSuccess: () => {
+//       toast.success(
+//         "Registered successfully! Redirecting to login page shortly."
+//       )
+//       setTimeout(() => {
+//         navigate({ to: "/login" })
+//       }, 3000)
+//     },
+//   })
+// }

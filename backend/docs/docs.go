@@ -119,7 +119,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Return the current authenticated user's id.",
+                "description": "Return the current authenticated user's id and name.",
                 "produces": [
                     "application/json"
                 ],
