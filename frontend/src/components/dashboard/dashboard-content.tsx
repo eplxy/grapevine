@@ -34,7 +34,7 @@ function NewPostBar() {
     <CreateNoteDialog
       triggerComponent={
         <div className="mx-4 hidden min-h-16 items-center gap-4 rounded-lg border border-border bg-card px-4 shadow-xs hover:border-neutral-700 sm:flex">
-          <UserAvatar />
+          <UserAvatar username={authSessionQuery?.data?.username} />
           <span className="text-muted-foreground">{getText()}</span>
         </div>
       }

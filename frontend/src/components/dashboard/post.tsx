@@ -33,7 +33,7 @@ export default function Post(props: PostProps) {
   return (
     <Card className="border-b border-none pb-4 shadow-none">
       <CardHeader className="flex flex-row items-center gap-4">
-        <UserAvatar />
+        <UserAvatar username={props.feedItem.author_name}/>
         <div className="flex flex-col">
           <span className="text-sm font-semibold">{feedItem.author_name}</span>
           <span

@@ -177,7 +177,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
   return (
     <>
       <div className="flex flex-1 flex-row gap-4 overflow-hidden">
-        <UserAvatar />
+        <UserAvatar username={props.user?.username} />
         <div className="flex w-full flex-1 flex-col overflow-hidden">
           <div className="flex w-full justify-between">
             <span className="text-lg text-primary">
