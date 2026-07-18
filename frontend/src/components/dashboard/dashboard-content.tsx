@@ -44,7 +44,7 @@ function NewPostBar() {
       triggerComponent={
         <div
           onClick={handleClick}
-          className="mx-3 hidden min-h-16 items-center gap-4 rounded-lg border border-border bg-card px-4 shadow-xs hover:border-neutral-700 sm:flex"
+          className="mx-4 hidden min-h-16 items-center gap-4 rounded-lg border border-border bg-card px-4 shadow-xs hover:border-neutral-700 sm:flex"
         >
           <UserAvatar />
           <span className="text-muted-foreground">{getText()}</span>
@@ -64,7 +64,7 @@ function FeedTypeSelect() {
 
   return (
     <Select value={value} onValueChange={(val) => setValue(val)}>
-      <SelectTrigger className="ml-3 hidden w-40 bg-card text-sm text-muted-foreground md:flex">
+      <SelectTrigger className="ml-4 hidden w-40 bg-card text-sm text-muted-foreground md:flex">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

@@ -339,7 +339,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.createNoteRequest"
+                            "$ref": "#/definitions/handlers.CreateNoteRequest"
                         }
                     }
                 ],
@@ -406,7 +406,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.createReviewRequest"
+                            "$ref": "#/definitions/handlers.CreateReviewRequest"
                         }
                     }
                 ],
@@ -506,40 +506,27 @@
         }
     },
     "definitions": {
-        "handlers.authRequest": {
-            "type": "object",
-            "required": [
-                "name",
-                "password"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
-                }
-            }
-        },
-        "handlers.createNoteRequest": {
+        "handlers.CreateNoteRequest": {
             "type": "object",
             "required": [
                 "content"
             ],
             "properties": {
                 "content": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "media_urls": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
+                },
+                "text_content": {
+                    "type": "string"
                 }
             }
         },
-        "handlers.createReviewRequest": {
+        "handlers.CreateReviewRequest": {
             "type": "object",
             "required": [
                 "location",
@@ -547,10 +534,10 @@
             ],
             "properties": {
                 "content": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "location": {
-                    "$ref": "#/definitions/handlers.locationUpsertInfo"
+                    "$ref": "#/definitions/handlers.LocationUpsertInfo"
                 },
                 "media_urls": {
                     "type": "array",
@@ -562,10 +549,13 @@
                     "type": "integer",
                     "maximum": 5,
                     "minimum": 1
+                },
+                "text_content": {
+                    "type": "string"
                 }
             }
         },
-        "handlers.locationUpsertInfo": {
+        "handlers.LocationUpsertInfo": {
             "type": "object",
             "required": [
                 "address",
@@ -595,6 +585,22 @@
                 }
             }
         },
+        "handlers.authRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "password"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
         "models.FeedItem": {
             "type": "object",
             "properties": {
@@ -605,7 +611,7 @@
                     "type": "string"
                 },
                 "content": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "created_at": {
                     "type": "string"
@@ -631,6 +637,9 @@
                 },
                 "rating": {
                     "type": "integer"
+                },
+                "text_content": {
+                    "type": "string"
                 }
             }
         },

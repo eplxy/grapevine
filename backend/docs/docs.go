@@ -347,7 +347,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.createNoteRequest"
+                            "$ref": "#/definitions/handlers.CreateNoteRequest"
                         }
                     }
                 ],
@@ -414,7 +414,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.createReviewRequest"
+                            "$ref": "#/definitions/handlers.CreateReviewRequest"
                         }
                     }
                 ],
@@ -514,40 +514,27 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handlers.authRequest": {
-            "type": "object",
-            "required": [
-                "name",
-                "password"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string",
-                    "minLength": 8
-                }
-            }
-        },
-        "handlers.createNoteRequest": {
+        "handlers.CreateNoteRequest": {
             "type": "object",
             "required": [
                 "content"
             ],
             "properties": {
                 "content": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "media_urls": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
+                },
+                "text_content": {
+                    "type": "string"
                 }
             }
         },
-        "handlers.createReviewRequest": {
+        "handlers.CreateReviewRequest": {
             "type": "object",
             "required": [
                 "location",
@@ -555,10 +542,10 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "location": {
-                    "$ref": "#/definitions/handlers.locationUpsertInfo"
+                    "$ref": "#/definitions/handlers.LocationUpsertInfo"
                 },
                 "media_urls": {
                     "type": "array",
@@ -570,10 +557,13 @@ const docTemplate = `{
                     "type": "integer",
                     "maximum": 5,
                     "minimum": 1
+                },
+                "text_content": {
+                    "type": "string"
                 }
             }
         },
-        "handlers.locationUpsertInfo": {
+        "handlers.LocationUpsertInfo": {
             "type": "object",
             "required": [
                 "address",
@@ -603,6 +593,22 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.authRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "password"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
         "models.FeedItem": {
             "type": "object",
             "properties": {
@@ -613,7 +619,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "content": {
-                    "type": "string"
+                    "type": "object"
                 },
                 "created_at": {
                     "type": "string"
@@ -639,6 +645,9 @@ const docTemplate = `{
                 },
                 "rating": {
                     "type": "integer"
+                },
+                "text_content": {
+                    "type": "string"
                 }
             }
         },

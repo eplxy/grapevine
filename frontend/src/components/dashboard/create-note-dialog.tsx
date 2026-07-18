@@ -15,6 +15,7 @@ import UserAvatar from "../user-avatar"
 import { Placeholder } from "@tiptap/extensions"
 import { EditorContent, useEditor } from "@tiptap/react"
 
+import { useUploadNoteMutation } from "@/hooks/queries/post-queries"
 import StarterKit from "@tiptap/starter-kit"
 import clsx from "clsx"
 import {
@@ -31,6 +32,7 @@ import { Button } from "../ui/button"
 import { Toggle } from "../ui/toggle"
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group"
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
+import { EDITOR_CLASSES } from "@/styles/styles"
 
 type CreateNoteDialogProps = {
   triggerComponent?: JSX.Element
@@ -55,10 +57,11 @@ export default function CreateNoteDialog(props: CreateNoteDialogProps) {
 
   const user = sessionQuery.data
 
+  const [isOpen, setIsOpen] = useState<boolean>(false)
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false) // always fullscreen under lg
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild={!!props.triggerComponent}>
         {props.triggerComponent || "New"}
       </DialogTrigger>
@@ -78,6 +81,7 @@ export default function CreateNoteDialog(props: CreateNoteDialogProps) {
           isFullscreen={isFullscreen}
           setIsFullscreen={setIsFullscreen}
           user={user}
+          closeDialog={() => setIsOpen(false)}
         />
       </DialogContent>
     </Dialog>
@@ -88,12 +92,16 @@ interface InnerProps {
   user?: GetAuthSessionResponseModel
   isFullscreen: boolean
   setIsFullscreen: Dispatch<SetStateAction<boolean>>
+  closeDialog: () => void
 }
+
 
 function CreateNoteDialogInnerContent(props: InnerProps) {
   const [isEditorEmpty, setIsEditorEmpty] = useState<boolean>(true)
   const [activeFormats, setActiveFormats] = useState<string[]>([]) // for editor marks, e.g. bold/italic/strikethrough
   const [isBulletActive, setIsBulletActive] = useState<boolean>(false)
+
+  const postMutation = useUploadNoteMutation()
 
   const editor = useEditor({
     extensions: [
@@ -109,7 +117,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
     editorProps: {
       attributes: {
         class:
-          "focus:outline-none h-full max-w-full prose prose-sm dark:prose-invert prose-p:mt-0.5 prose-p:mb-0.5",
+          "focus:outline-none h-full max-w-full" + " " + EDITOR_CLASSES,
       },
     },
     onTransaction: ({ editor }) => {
@@ -133,7 +141,21 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
 
   const canSubmit = !isEditorEmpty
   const handleSubmit = () => {
-    console.log(editor.getJSON().content)
+    if (!canSubmit) return
+
+    const payload = {
+      content: editor.getJSON(),
+      text_content: editor.getText(),
+      media_urls: [], //TODO add media
+    }
+
+    postMutation.mutate(payload, {
+      onSuccess: () => {
+        props.closeDialog()
+      },
+    })
+
+    console.log(editor.getJSON())
   }
 
   return (

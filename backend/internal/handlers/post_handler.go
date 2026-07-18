@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"grapevine/internal/database"
 	"grapevine/internal/models"
 	"grapevine/internal/responses"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,12 +25,13 @@ func NewPostHandler(postRepo database.PostDomain, locationRepo database.Location
 	}
 }
 
-type createNoteRequest struct {
-	Content   string   `json:"content" binding:"required"`
-	MediaURLs []string `json:"media_urls"`
+type CreateNoteRequest struct {
+	Content     json.RawMessage `json:"content" binding:"required" swaggertype:"object"`
+	TextContent string          `json:"text_content"`
+	MediaURLs   []string        `json:"media_urls"`
 }
 
-type locationUpsertInfo struct {
+type LocationUpsertInfo struct {
 	GooglePlaceID string  `json:"google_place_id" binding:"required"`
 	Name          string  `json:"name" binding:"required"`
 	Address       string  `json:"address" binding:"required"`
@@ -37,12 +40,13 @@ type locationUpsertInfo struct {
 	Lng           float64 `json:"lng" binding:"required"`
 }
 
-type createReviewRequest struct {
-	Content   string   `json:"content"`
-	Rating    int      `json:"rating" binding:"required,min=1,max=5"`
-	MediaURLs []string `json:"media_urls"`
+type CreateReviewRequest struct {
+	Content     json.RawMessage `json:"content" swaggertype:"object"`
+	TextContent string          `json:"text_content"`
+	Rating      int             `json:"rating" binding:"required,min=1,max=5"`
+	MediaURLs   []string        `json:"media_urls"`
 
-	LocationInfo locationUpsertInfo `json:"location" binding:"required"`
+	LocationInfo LocationUpsertInfo `json:"location" binding:"required"`
 }
 
 // CreateNoteHandler creates a standalone text/media post.
@@ -52,7 +56,7 @@ type createReviewRequest struct {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        request body createNoteRequest true "Note payload"
+// @Param        request body CreateNoteRequest true "Note payload"
 // @Success      201 {object} map[string]interface{}
 // @Failure      400,401,500 {object} map[string]string
 // @Router       /posts/note [post]
@@ -64,13 +68,31 @@ func (h *PostHandler) CreateNoteHandler(c *gin.Context) {
 		return
 	}
 
-	var req createNoteRequest
+	// validate request shape
+	var req CreateNoteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		responses.WriteBadRequest(c, "invalid_request", err.Error())
 		return
 	}
 
-	postID, err := h.postRepo.CreateNote(c.Request.Context(), userID, req.Content, req.MediaURLs)
+	// validate request.content shape
+	var rootNode struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(req.Content, &rootNode); err != nil || rootNode.Type != "doc" {
+		responses.WriteBadRequest(c, "invalid_content", "Content must be a valid document format")
+		return
+	}
+
+	// validate no empty notes via text content
+	trimmedText := strings.TrimSpace(req.TextContent)
+
+	if len(trimmedText) == 0 && len(req.MediaURLs) == 0 {
+		responses.WriteBadRequest(c, "empty_post", "A note must contain either text or media")
+		return
+	}
+
+	postID, err := h.postRepo.CreateNote(c.Request.Context(), userID, req.Content, trimmedText, req.MediaURLs)
 	if err != nil {
 		responses.WriteError(c, http.StatusInternalServerError, "creation_failed", fmt.Sprintf("Failed to create note: %s", err.Error()))
 		return
@@ -86,7 +108,7 @@ func (h *PostHandler) CreateNoteHandler(c *gin.Context) {
 // @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        request body createReviewRequest true "Review payload"
+// @Param        request body CreateReviewRequest true "Review payload"
 // @Success      201 {object} map[string]interface{}
 // @Failure      400,401,500 {object} map[string]string
 // @Router       /posts/review [post]
@@ -97,9 +119,19 @@ func (h *PostHandler) CreateReviewHandler(c *gin.Context) {
 		return
 	}
 
-	var req createReviewRequest
+	// validate request shape
+	var req CreateReviewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		responses.WriteBadRequest(c, "invalid_request", err.Error())
+		return
+	}
+
+	// validate request.content shape
+	var rootNode struct {
+		Type string `json:"type"`
+	}
+	if err := json.Unmarshal(req.Content, &rootNode); err != nil || rootNode.Type != "doc" {
+		responses.WriteBadRequest(c, "invalid_content", "Content must be a valid document format")
 		return
 	}
 
@@ -115,7 +147,7 @@ func (h *PostHandler) CreateReviewHandler(c *gin.Context) {
 	}
 
 	postID, err := h.postRepo.CreateReview(
-		ctx, userID, locationID, req.Rating, req.Content, req.MediaURLs,
+		ctx, userID, locationID, req.Rating, req.Content, req.TextContent, req.MediaURLs,
 	)
 	if err != nil {
 		responses.WriteError(c, http.StatusInternalServerError, "creation_failed", "Failed to create review")
@@ -141,7 +173,7 @@ func (h *PostHandler) GetHomeFeedHandler(c *gin.Context) {
 
 	feed, err := h.postRepo.GetHomeFeed(c.Request.Context(), limit, offset)
 	if err != nil {
-		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", "Failed to load feed")
+		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", fmt.Sprintf("Failed to load feed. err: %s", err))
 		return
 	}
 

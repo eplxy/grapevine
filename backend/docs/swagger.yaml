@@ -1,32 +1,23 @@
 definitions:
-  handlers.authRequest:
-    properties:
-      name:
-        type: string
-      password:
-        minLength: 8
-        type: string
-    required:
-    - name
-    - password
-    type: object
-  handlers.createNoteRequest:
+  handlers.CreateNoteRequest:
     properties:
       content:
-        type: string
+        type: object
       media_urls:
         items:
           type: string
         type: array
+      text_content:
+        type: string
     required:
     - content
     type: object
-  handlers.createReviewRequest:
+  handlers.CreateReviewRequest:
     properties:
       content:
-        type: string
+        type: object
       location:
-        $ref: '#/definitions/handlers.locationUpsertInfo'
+        $ref: '#/definitions/handlers.LocationUpsertInfo'
       media_urls:
         items:
           type: string
@@ -35,11 +26,13 @@ definitions:
         maximum: 5
         minimum: 1
         type: integer
+      text_content:
+        type: string
     required:
     - location
     - rating
     type: object
-  handlers.locationUpsertInfo:
+  handlers.LocationUpsertInfo:
     properties:
       address:
         type: string
@@ -60,6 +53,17 @@ definitions:
     - lng
     - name
     type: object
+  handlers.authRequest:
+    properties:
+      name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - name
+    - password
+    type: object
   models.FeedItem:
     properties:
       author_id:
@@ -67,7 +71,7 @@ definitions:
       author_name:
         type: string
       content:
-        type: string
+        type: object
       created_at:
         type: string
       location_id:
@@ -85,6 +89,8 @@ definitions:
         type: string
       rating:
         type: integer
+      text_content:
+        type: string
     type: object
   models.MediaItem:
     properties:
@@ -356,7 +362,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.createNoteRequest'
+          $ref: '#/definitions/handlers.CreateNoteRequest'
       produces:
       - application/json
       responses:
@@ -400,7 +406,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.createReviewRequest'
+          $ref: '#/definitions/handlers.CreateReviewRequest'
       produces:
       - application/json
       responses:

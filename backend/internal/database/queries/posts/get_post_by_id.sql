@@ -2,6 +2,7 @@ SELECT
 	p.id AS post_id,
 	p.type AS post_type,
 	p.content,
+	p.text_content,
 	p.created_at,
 	u.id AS author_id,
 	u.name AS author_name,

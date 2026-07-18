@@ -3,6 +3,10 @@ import { Card, CardContent, CardFooter, CardHeader } from "../ui/card"
 import UserAvatar from "../user-avatar"
 import type { FeedItemModel } from "@/models/models"
 import dayjs from "dayjs"
+import { useMemo } from "react"
+import { generateHTML } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
+import { EDITOR_CLASSES } from "@/styles/styles"
 
 type PostProps = {
   feedItem: FeedItemModel
@@ -12,8 +16,21 @@ export default function Post(props: PostProps) {
   const { feedItem } = props
   const likeCount = 0
   const replyCount = 0
+
+  const html = useMemo(() => {
+    try {
+      // TypeScript now knows item.content is a JSONContent object
+      if (!props.feedItem.content) return ""
+
+      return generateHTML(props.feedItem.content, [StarterKit])
+    } catch (error) {
+      console.error("Failed to parse note content", error)
+      return `<p class='text-destructive'>Error loading content</p>`
+    }
+  }, [props.feedItem.content])
+
   return (
-    <Card className="rounded-none border-b border-none pb-4 shadow-none">
+    <Card className="border-b border-none pb-4 shadow-none">
       <CardHeader className="flex flex-row items-center gap-4">
         <UserAvatar />
         <div className="flex flex-col">
@@ -24,9 +41,7 @@ export default function Post(props: PostProps) {
         </div>
       </CardHeader>
       <CardContent className="pb-4">
-        {!!feedItem.content && (
-          <p className="mb-4 text-sm">{feedItem.content}</p>
-        )}
+        {!!feedItem.content && <div className={EDITOR_CLASSES} dangerouslySetInnerHTML={{ __html: html }} />}
         {feedItem.media && feedItem.media.length > 0 && (
           <div className="flex aspect-video w-full items-center justify-center rounded-md bg-muted">
             Image Placeholder

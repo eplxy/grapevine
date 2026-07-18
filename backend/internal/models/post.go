@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type PostType string
 
@@ -18,10 +21,12 @@ const (
 )
 
 type Post struct {
-	ID         int
-	CreatedAt  time.Time
-	UserID     int
-	Type       PostType
-	Content    string
-	Visibility PostVisibility
+	ID          int             `json:"id" db:"id"`
+	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
+	UserID      int             `json:"user_id" db:"user_id"`
+	Type        PostType        `json:"type" db:"type"`
+	Content     json.RawMessage `json:"content" db:"content" swaggertype:"object"`
+	TextContent string          `json:"text_content" db:"text_content"`
+
+	Visibility PostVisibility `json:"visibility" db:"visibility"`
 }

@@ -22,8 +22,8 @@ type PostRepository struct {
 }
 
 type PostDomain interface {
-	CreateNote(ctx context.Context, userID int, content string, mediaURLs []string) (int, error)
-	CreateReview(ctx context.Context, userID, locationID int, rating int, content string, mediaURLs []string) (int, error)
+	CreateNote(ctx context.Context, userID int, content json.RawMessage, textContent string, mediaURLs []string) (int, error)
+	CreateReview(ctx context.Context, userID, locationID int, rating int, content json.RawMessage, text_content string, mediaURLs []string) (int, error)
 	GetHomeFeed(ctx context.Context, limit, offset int) ([]models.FeedItem, error)
 	GetPostByID(ctx context.Context, postID int) (*models.FeedItem, error)
 }
@@ -33,7 +33,7 @@ func NewPostRepository(db *pgxpool.Pool) *PostRepository {
 }
 
 // CreateNote inserts into posts and post_media
-func (r *PostRepository) CreateNote(ctx context.Context, userID int, content string, mediaURLs []string) (int, error) {
+func (r *PostRepository) CreateNote(ctx context.Context, userID int, content json.RawMessage, textContent string, mediaURLs []string) (int, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %w", err)
@@ -42,10 +42,10 @@ func (r *PostRepository) CreateNote(ctx context.Context, userID int, content str
 
 	var postID int
 	postQuery := `
-			INSERT INTO posts (user_id, type, content)
-			VALUES ($1, $2, $3)
+			INSERT INTO posts (user_id, type, content, text_content)
+			VALUES ($1, $2, $3, $4)
 			RETURNING id`
-	err = tx.QueryRow(ctx, postQuery, userID, models.PostTypeNote, content).Scan(&postID)
+	err = tx.QueryRow(ctx, postQuery, userID, models.PostTypeNote, content, textContent).Scan(&postID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert note: %w", err)
 	}
@@ -70,7 +70,7 @@ func (r *PostRepository) CreateNote(ctx context.Context, userID int, content str
 }
 
 // CreateReview inserts into posts, reviews, and post_media in a single transaction
-func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID int, rating int, content string, mediaURLs []string) (int, error) {
+func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID int, rating int, content json.RawMessage, textContent string, mediaURLs []string) (int, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %w", err)
@@ -79,11 +79,11 @@ func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID in
 
 	var postID int
 	postQuery := `
-		INSERT INTO posts (user_id, type, content)
-		VALUES ($1, $2, $3)
+		INSERT INTO posts (user_id, type, content, text_content)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id`
 
-	err = tx.QueryRow(ctx, postQuery, userID, models.PostTypeReview, content).Scan(&postID)
+	err = tx.QueryRow(ctx, postQuery, userID, models.PostTypeReview, content, textContent).Scan(&postID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert review post: %w", err)
 	}
@@ -132,6 +132,7 @@ func (r *PostRepository) GetHomeFeed(ctx context.Context, limit, offset int) ([]
 			&item.PostID,
 			&item.PostType,
 			&item.Content,
+			&item.TextContent,
 			&item.CreatedAt,
 			&item.AuthorID,
 			&item.AuthorName,
@@ -166,6 +167,7 @@ func (r *PostRepository) GetPostByID(ctx context.Context, postID int) (*models.F
 		&item.PostID,
 		&item.PostType,
 		&item.Content,
+		&item.TextContent,
 		&item.CreatedAt,
 		&item.AuthorID,
 		&item.AuthorName,

@@ -1,7 +1,10 @@
+import type { JSONContent } from "@tiptap/react"
+
 export interface FeedItemModel {
   post_id: number,
   post_type: PostType,
-  content?: string,
+  content?: JSONContent,
+  text_content?: string,
   created_at: string,
   author_id: string
   author_name: string
