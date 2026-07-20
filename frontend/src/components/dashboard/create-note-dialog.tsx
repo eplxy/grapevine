@@ -89,11 +89,11 @@ export default function CreateNoteDialog(props: CreateNoteDialogProps) {
         showCloseButton={false}
         className={clsx(
           "flex flex-col transition-none",
-          "h-screen min-w-full rounded-none", // mobile + fullscreen desktop
+          "h-screen min-w-full rounded-none py-12", // mobile + fullscreen desktop
 
           // We only override the base classes when the user is NOT fullscreen.
           !isFullscreen &&
-            "lg:h-auto lg:max-h-[70vh] lg:min-h-80 lg:min-w-xl lg:rounded-lg"
+            "lg:h-auto lg:max-h-[70vh] lg:min-h-80 lg:min-w-xl lg:rounded-lg lg:py-6"
         )}
       >
         <CreateNoteDialogInnerContent
