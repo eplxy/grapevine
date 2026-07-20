@@ -11,7 +11,11 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRouter(env constants.Environment, authHandler *handlers.AuthHandler, postHandler *handlers.PostHandler) *gin.Engine {
+func SetupRouter(
+	env constants.Environment,
+	authHandler *handlers.AuthHandler,
+	postHandler *handlers.PostHandler,
+	mediaHandler *handlers.MediaHandler) *gin.Engine {
 	router := gin.Default()
 	router.Use(cors.New(getCorsConfig(env)))
 
@@ -29,6 +33,10 @@ func SetupRouter(env constants.Environment, authHandler *handlers.AuthHandler, p
 	postGroup.POST("/note", middleware.AuthMiddleware(), postHandler.CreateNoteHandler)
 	postGroup.POST("/review", middleware.AuthMiddleware(), postHandler.CreateReviewHandler)
 	postGroup.GET("/:id", postHandler.GetPostByIDHandler)
+
+	mediaGroup := router.Group("/media")
+
+	mediaGroup.GET("/upload-url", middleware.AuthMiddleware(), mediaHandler.GetUploadURLHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

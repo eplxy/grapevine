@@ -243,6 +243,65 @@
                 }
             }
         },
+        "/media/upload-url": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generates a temporary signed URL to upload media directly to Google Cloud Storage from the frontend. Returns both the signed URL for the PUT request and the future public URL.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "media"
+                ],
+                "summary": "Generate GCS signed URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "The name of the file (e.g., review-pic.jpg)",
+                        "name": "fileName",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "The exact MIME type of the file (e.g., image/jpeg)",
+                        "name": "contentType",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully generated URLs",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.UploadURLResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing fileName or contentType",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to generate upload URL",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/ping": {
             "get": {
                 "description": "Returns pong message",
@@ -581,6 +640,17 @@
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.UploadURLResponse": {
+            "type": "object",
+            "properties": {
+                "publicUrl": {
+                    "type": "string"
+                },
+                "signedUrl": {
                     "type": "string"
                 }
             }

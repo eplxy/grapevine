@@ -53,6 +53,13 @@ definitions:
     - lng
     - name
     type: object
+  handlers.UploadURLResponse:
+    properties:
+      publicUrl:
+        type: string
+      signedUrl:
+        type: string
+    type: object
   handlers.authRequest:
     properties:
       name:
@@ -267,6 +274,46 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /media/upload-url:
+    get:
+      description: Generates a temporary signed URL to upload media directly to Google
+        Cloud Storage from the frontend. Returns both the signed URL for the PUT request
+        and the future public URL.
+      parameters:
+      - description: The name of the file (e.g., review-pic.jpg)
+        in: query
+        name: fileName
+        required: true
+        type: string
+      - description: The exact MIME type of the file (e.g., image/jpeg)
+        in: query
+        name: contentType
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully generated URLs
+          schema:
+            $ref: '#/definitions/handlers.UploadURLResponse'
+        "400":
+          description: Missing fileName or contentType
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to generate upload URL
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Generate GCS signed URL
+      tags:
+      - media
   /ping:
     get:
       consumes:

@@ -24,3 +24,8 @@ export const postKeys = {
   getFeed: (limit: number, offset: number) => ["feed", limit, offset],
   uploadNote: () => [...postKeys.posts, "upload", "note"] as const,
 }
+
+export const mediaKeys = {
+  media: ["media"] as const,
+  getUploadURL: (fileName: string, mimeType: string) => [...mediaKeys.media, "upload-url", fileName, mimeType]
+}

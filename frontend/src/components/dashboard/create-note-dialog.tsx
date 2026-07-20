@@ -124,6 +124,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
     extensions: [
       StarterKit.configure({
         heading: false,
+        dropcursor: false,
       }),
       Placeholder.configure({
         placeholder: getRandomPlaceholder(),
@@ -211,6 +212,10 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
       </div>
       <DialogFooter>
         <div className="flex w-full flex-col gap-2">
+          <div className="flex w-full items-center justify-start">
+            {/*media previewer*/}
+
+          </div>
           <div className="flex w-full items-center justify-between">
             <div className="flex gap-2">
               <div className="flex items-center gap-2">
