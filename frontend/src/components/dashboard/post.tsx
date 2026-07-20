@@ -1,11 +1,20 @@
-import type { FeedItemModel } from "@/models/models"
+import type { FeedItemModel, MediaItem } from "@/models/models"
 import { EDITOR_CLASSES } from "@/styles/styles"
 import { generateHTML } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardHeader } from "../ui/card"
+import {
+  Carousel,
+  type CarouselApi,
+  CarouselContent,
+  CarouselItem,
+  CarouselNavigation,
+  CarouselNext,
+  CarouselPrevious,
+} from "../ui/carousel"
 import UserAvatar from "../user-avatar"
 
 type PostProps = {
@@ -52,9 +61,7 @@ export default function Post(props: PostProps) {
           />
         )}
         {feedItem.media && feedItem.media.length > 0 && (
-          <div className="my-2 flex aspect-video w-full items-center justify-center rounded-md bg-muted">
-            <img src={feedItem.media[0].url}></img>
-          </div>
+          <MediaCarousel items={feedItem.media} />
         )}
       </CardContent>
       {/*<CardFooter className="flex gap-6 text-muted-foreground">
@@ -69,5 +76,23 @@ export default function Post(props: PostProps) {
         </button>
       </CardFooter>*/}
     </Card>
+  )
+}
+
+function MediaCarousel({ items }: { items: MediaItem[] }) {
+
+  return (
+    <Carousel className="relative w-full">
+      <CarouselContent>
+        {items.map((mediaItem) => (
+          <CarouselItem key={mediaItem.display_order + mediaItem.url}>
+            <div className="relative my-2 flex aspect-video w-full items-center justify-center rounded-md bg-muted">
+              <img src={mediaItem.url}></img>
+            </div>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+      <CarouselNavigation/>
+    </Carousel>
   )
 }

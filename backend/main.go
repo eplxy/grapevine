@@ -54,7 +54,7 @@ func main() {
 	}
 
 	authHandler := handlers.NewAuthHandler(userRepo, env == constants.Production)
-	postHandler := handlers.NewPostHandler(postRepo, locationRepo)
+	postHandler := handlers.NewPostHandler(postRepo, locationRepo, mediaRepo)
 	mediaHandler := handlers.NewMediaHandler(mediaRepo)
 
 	engine := router.SetupRouter(env, authHandler, postHandler, mediaHandler)

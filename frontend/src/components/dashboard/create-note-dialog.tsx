@@ -159,7 +159,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
     },
   })
 
-  const canSubmit = !isEditorEmpty && itemList.every((item) => !!item.publicURL)
+  const canSubmit = !isEditorEmpty || itemList.every((item) => !!item.publicURL)
   const handleSubmit = () => {
     if (!canSubmit) return
 

@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"grapevine/internal/responses"
 	"grapevine/internal/utils"
 	"strings"
@@ -12,7 +11,6 @@ import (
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
-		fmt.Println("authHeader", authHeader)
 		if authHeader == "" {
 			responses.WriteUnauthorized(c, "missing_authorization_header", "Authorization header is required")
 			c.Abort() // stop downstream handlers from execution

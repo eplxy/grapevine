@@ -7,6 +7,7 @@ import (
 	"grapevine/internal/models"
 	"grapevine/internal/responses"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -16,12 +17,14 @@ import (
 type PostHandler struct {
 	postRepo     database.PostDomain
 	locationRepo database.LocationDomain
+	mediaRepo    database.MediaDomain
 }
 
-func NewPostHandler(postRepo database.PostDomain, locationRepo database.LocationDomain) *PostHandler {
+func NewPostHandler(postRepo database.PostDomain, locationRepo database.LocationDomain, mediaRepo database.MediaDomain) *PostHandler {
 	return &PostHandler{
 		postRepo:     postRepo,
 		locationRepo: locationRepo,
+		mediaRepo:    mediaRepo,
 	}
 }
 
@@ -92,6 +95,20 @@ func (h *PostHandler) CreateNoteHandler(c *gin.Context) {
 		return
 	}
 
+	for _, url := range req.MediaURLs {
+		fileName, err := extractObjectNameFromURL(url)
+
+		if err != nil {
+			responses.WriteError(c, http.StatusInternalServerError, "incorrect_url_format", fmt.Sprintf("Failed to read storage object name from media url while moving out of temp: %s", err.Error()))
+		}
+
+		err = h.mediaRepo.MoveMediaFromTmpToPosts(c.Request.Context(), fileName)
+		if err != nil {
+			responses.WriteError(c, http.StatusInternalServerError, "storage_move_failure", fmt.Sprintf("Failed to move media out of temporary folder: %s", err.Error()))
+			return
+		}
+	}
+
 	postID, err := h.postRepo.CreateNote(c.Request.Context(), userID, req.Content, trimmedText, req.MediaURLs)
 	if err != nil {
 		responses.WriteError(c, http.StatusInternalServerError, "creation_failed", fmt.Sprintf("Failed to create note: %s", err.Error()))
@@ -146,9 +163,24 @@ func (h *PostHandler) CreateReviewHandler(c *gin.Context) {
 		return
 	}
 
+	for _, url := range req.MediaURLs {
+		fileName, err := extractObjectNameFromURL(url)
+
+		if err != nil {
+			responses.WriteError(c, http.StatusInternalServerError, "incorrect_url_format", fmt.Sprintf("Failed to read storage object name from media url while moving out of temp: %s", err.Error()))
+		}
+
+		err = h.mediaRepo.MoveMediaFromTmpToPosts(ctx, fileName)
+		if err != nil {
+			responses.WriteError(c, http.StatusInternalServerError, "storage_move_failure", fmt.Sprintf("Failed to move media out of temporary folder: %s", err.Error()))
+			return
+		}
+	}
+
 	postID, err := h.postRepo.CreateReview(
 		ctx, userID, locationID, req.Rating, req.Content, req.TextContent, req.MediaURLs,
 	)
+
 	if err != nil {
 		responses.WriteError(c, http.StatusInternalServerError, "creation_failed", "Failed to create review")
 		return
@@ -212,4 +244,20 @@ func (h *PostHandler) GetPostByIDHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": post})
+}
+
+func extractObjectNameFromURL(rawURL string) (string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse url: %w", err)
+	}
+
+	// parsedURL.Path will look like: "/bucket-name/folder-name/fileName.extension"
+	parts := strings.Split(strings.TrimPrefix(parsedURL.Path, "/"), "/")
+	objectName := parts[len(parts)-1]
+	if !strings.Contains(objectName, ".") {
+		return "", fmt.Errorf("invalid storage url path, could not find name and extension: %s", parsedURL.Path)
+	}
+
+	return objectName, nil
 }
