@@ -33,7 +33,7 @@ export default function Post(props: PostProps) {
   return (
     <Card className="border-b border-none pb-4 shadow-none">
       <CardHeader className="flex flex-row items-center gap-4">
-        <UserAvatar username={props.feedItem.author_name}/>
+        <UserAvatar username={props.feedItem.author_name} />
         <div className="flex flex-col">
           <span className="text-sm font-semibold">{feedItem.author_name}</span>
           <span
@@ -52,8 +52,7 @@ export default function Post(props: PostProps) {
           />
         )}
         {feedItem.media && feedItem.media.length > 0 && (
-          <div className="flex aspect-video w-full items-center justify-center rounded-md bg-muted">
-            Image Placeholder
+          <div className="my-2 flex aspect-video w-full items-center justify-center rounded-md bg-muted">
             <img src={feedItem.media[0].url}></img>
           </div>
         )}

@@ -27,5 +27,11 @@ export const postKeys = {
 
 export const mediaKeys = {
   media: ["media"] as const,
-  getUploadURL: (fileName: string, mimeType: string) => [...mediaKeys.media, "upload-url", fileName, mimeType]
+  upload: (file: File) => [
+    ...mediaKeys.media,
+    "upload",
+    file.name,
+    file.type,
+    file.lastModified
+  ],
 }

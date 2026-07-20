@@ -24,6 +24,7 @@ type FeedItem struct {
 }
 
 type MediaItem struct {
-	URL       string `json:"url"`
-	MediaType string `json:"media_type"` // "image" or "video"
+	URL          string `json:"url"`
+	MediaType    string `json:"media_type"`    // "image" or "video"
+	DisplayOrder int    `json:"display_order"` // 1-indexed display order
 }

@@ -22,7 +22,6 @@ import StarterKit from "@tiptap/starter-kit"
 import clsx from "clsx"
 import {
   Bold,
-  Image,
   Italic,
   List,
   Maximize2,
@@ -35,10 +34,10 @@ import {
   type MouseEvent,
   type SetStateAction,
 } from "react"
+import MediaUploader, { type MediaUploaderListItem } from "../media-uploader"
 import { Button } from "../ui/button"
 import { Toggle } from "../ui/toggle"
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group"
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 
 type CreateNoteDialogProps = {
   triggerComponent?: JSX.Element
@@ -84,6 +83,8 @@ export default function CreateNoteDialog(props: CreateNoteDialogProps) {
         {props.triggerComponent || "New"}
       </DialogTrigger>
       <DialogContent
+        onPointerDownOutside={(ev) => ev.preventDefault()}
+        onEscapeKeyDown={(ev) => ev.preventDefault()}
         disableBackgroundBlur
         showCloseButton={false}
         className={clsx(
@@ -117,6 +118,8 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
   const [isEditorEmpty, setIsEditorEmpty] = useState<boolean>(true)
   const [activeFormats, setActiveFormats] = useState<string[]>([]) // for editor marks, e.g. bold/italic/strikethrough
   const [isBulletActive, setIsBulletActive] = useState<boolean>(false)
+
+  const [itemList, setItemList] = useState<MediaUploaderListItem[]>([])
 
   const postMutation = useUploadNoteMutation()
 
@@ -156,14 +159,17 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
     },
   })
 
-  const canSubmit = !isEditorEmpty
+  const canSubmit = !isEditorEmpty && itemList.every((item) => !!item.publicURL)
   const handleSubmit = () => {
     if (!canSubmit) return
+
+    // canSubmit condition prevents submitting missing publicURLs.
+    const media_urls = itemList.map((item) => item.publicURL as string)
 
     const payload = {
       content: editor.getJSON(),
       text_content: editor.getText(),
-      media_urls: [], //TODO add media
+      media_urls
     }
 
     postMutation.mutate(payload, {
@@ -171,8 +177,6 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
         props.closeDialog()
       },
     })
-
-    console.log(editor.getJSON())
   }
 
   return (
@@ -212,23 +216,10 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
       </div>
       <DialogFooter>
         <div className="flex w-full flex-col gap-2">
-          <div className="flex w-full items-center justify-start">
-            {/*media previewer*/}
-
-          </div>
+          <MediaUploader itemList={itemList} setItemList={setItemList} />
           <div className="flex w-full items-center justify-between">
             <div className="flex gap-2">
               <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon-lg">
-                      <Image />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Media</p>
-                  </TooltipContent>
-                </Tooltip>
                 <ToggleGroup
                   variant={"outline"}
                   type="multiple"

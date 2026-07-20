@@ -18,6 +18,7 @@ export interface FeedItemModel {
 export interface MediaItem {
   url: string
   media_type: string
+  display_order: number
 }
 
 export const PostType = {

@@ -51,11 +51,11 @@ func (r *PostRepository) CreateNote(ctx context.Context, userID int, content jso
 	}
 
 	if len(mediaURLs) > 0 {
-		mediaQuery := `INSERT INTO post_media (post_id, url, type) VALUES ($1, $2, $3)`
-		for _, url := range mediaURLs {
+		mediaQuery := `INSERT INTO post_media (post_id, url, type, display_order) VALUES ($1, $2, $3, $4)`
+		for idx, url := range mediaURLs {
 
 			// TODO alter method signature to accept videos too
-			_, err = tx.Exec(ctx, mediaQuery, postID, url, "image")
+			_, err = tx.Exec(ctx, mediaQuery, postID, url, "image", idx+1)
 			if err != nil {
 				return 0, fmt.Errorf("failed to insert media: %w", err)
 			}

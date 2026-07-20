@@ -11,7 +11,7 @@ SELECT
 	r.location_id,
 	l.name AS location_name,
 	COALESCE(
-		(SELECT json_agg(json_build_object('url', pm.url, 'type', pm.type))
+		(SELECT json_agg(json_build_object('url', pm.url, 'type', pm.type, 'display_order', pm.display_order))
 		 FROM post_media pm
 		 WHERE pm.post_id = p.id),
 		'[]'::json

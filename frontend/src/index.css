@@ -132,4 +132,9 @@
     scrollbar-width: thin;
     scrollbar-color: var(--color-primary-foreground) var(--color-background);
   }
+  .tsqd-parent-container {
+    /*tanstack query dev tools*/
+    z-index: 999999 !important;
+    pointer-events: auto !important;
+  }
 }

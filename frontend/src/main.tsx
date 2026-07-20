@@ -4,6 +4,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { RouterProvider } from "@tanstack/react-router"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
+import { createPortal } from "react-dom"
 import WrappedToastContainer from "./components/toast-container"
 import { TooltipProvider } from "./components/ui/tooltip"
 import "./index.css"
@@ -16,7 +17,10 @@ createRoot(document.getElementById("root")!).render(
         <TooltipProvider>
           <WrappedToastContainer stacked={true} />
           <RouterProvider router={router} />
-          <ReactQueryDevtools initialIsOpen={false} />
+          {createPortal(
+            <ReactQueryDevtools initialIsOpen={false} />,
+            document.body
+          )}
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
