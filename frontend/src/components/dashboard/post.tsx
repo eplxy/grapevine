@@ -4,16 +4,13 @@ import { generateHTML } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import { Card, CardContent, CardHeader } from "../ui/card"
 import {
   Carousel,
-  type CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNavigation,
-  CarouselNext,
-  CarouselPrevious,
 } from "../ui/carousel"
 import UserAvatar from "../user-avatar"
 
@@ -80,7 +77,6 @@ export default function Post(props: PostProps) {
 }
 
 function MediaCarousel({ items }: { items: MediaItem[] }) {
-
   return (
     <Carousel className="relative w-full">
       <CarouselContent>
@@ -92,7 +88,7 @@ function MediaCarousel({ items }: { items: MediaItem[] }) {
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselNavigation/>
+      <CarouselNavigation />
     </Carousel>
   )
 }

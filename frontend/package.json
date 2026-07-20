@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
+    "tsc-b": "tsc -b",
     "preview": "vite preview"
   },
   "dependencies": {
