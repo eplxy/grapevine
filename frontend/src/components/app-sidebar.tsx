@@ -2,7 +2,7 @@ import logo from "@/assets/grapevine.svg"
 import AuthButton from "@/components/buttons/auth-button"
 import { Link, useLocation } from "@tanstack/react-router"
 import { Home, Map, Menu, Moon, Pencil, Sun, SunMoon, User } from "lucide-react"
-import type { ReactNode } from "react"
+import type { JSX, ReactNode } from "react"
 import { Button } from "./ui/button"
 import {
   Sidebar,
@@ -22,10 +22,10 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import CreateNoteDialog from "./dashboard/create-note-dialog"
 import { useTheme } from "./theme-provider"
 import { Label } from "./ui/label"
 import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group"
-import CreateNoteDialog from "./dashboard/create-note-dialog"
 
 export interface NavMapItemModel {
   title: string
@@ -109,56 +109,70 @@ export function AppSidebar() {
 }
 
 function MorePopoverButton() {
-  const { theme, setTheme } = useTheme()
-
   return (
     <SidebarMenuItem key={"More"}>
-      <Popover>
-        <PopoverTrigger asChild>
+      <DashboardSettingsPopover
+        triggerComponent={
           <SidebarMenuButton className="h-12 [&>svg]:size-6">
             <Menu />
 
             <span className="ml-2">More</span>
           </SidebarMenuButton>
-        </PopoverTrigger>
-        <PopoverContent side="right">
-          <PopoverTitle>Extra options</PopoverTitle>
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <div className="grid grid-cols-2 items-center gap-4">
-                <Label>Display theme</Label>
-                <ToggleGroup
-                  type="single"
-                  defaultValue={theme || "system"}
-                  onValueChange={setTheme}
+        }
+        side="right"
+      />
+    </SidebarMenuItem>
+  )
+}
+export function DashboardSettingsPopover({
+  triggerComponent,
+  side,
+}: {
+  triggerComponent: JSX.Element
+  side?: "right" | "top" | "bottom" | "left" | undefined
+}) {
+  const { theme, setTheme } = useTheme()
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>{triggerComponent}</PopoverTrigger>
+      <PopoverContent side={side}>
+        <PopoverTitle>Extra options</PopoverTitle>
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <div className="grid grid-cols-2 items-center gap-4">
+              <Label>Display theme</Label>
+              <ToggleGroup
+                type="single"
+                defaultValue={theme || "system"}
+                onValueChange={setTheme}
+              >
+                <ToggleGroupItem
+                  title="Light"
+                  value="light"
+                  aria-label="Toggle light"
                 >
-                  <ToggleGroupItem
-                    title="Light"
-                    value="light"
-                    aria-label="Toggle light"
-                  >
-                    <Sun />
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    title="Dark"
-                    value="dark"
-                    aria-label="Toggle dark"
-                  >
-                    <Moon />
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    title="System Default"
-                    value="system"
-                    aria-label="Toggle system default"
-                  >
-                    <SunMoon />
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              </div>
+                  <Sun />
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  title="Dark"
+                  value="dark"
+                  aria-label="Toggle dark"
+                >
+                  <Moon />
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  title="System Default"
+                  value="system"
+                  aria-label="Toggle system default"
+                >
+                  <SunMoon />
+                </ToggleGroupItem>
+              </ToggleGroup>
             </div>
           </div>
-        </PopoverContent>
-      </Popover>
-    </SidebarMenuItem>
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }

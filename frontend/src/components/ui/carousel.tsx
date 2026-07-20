@@ -1,10 +1,10 @@
-import * as React from "react"
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
 } from "embla-carousel-react"
+import * as React from "react"
 
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 
 type CarouselApi = UseEmblaCarouselType[1]
@@ -230,26 +230,35 @@ function CarouselNext({
 }
 
 export {
-  type CarouselApi,
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselPrevious,
   CarouselNext,
+  CarouselPrevious,
   useCarousel,
+  type CarouselApi,
 }
 
 export function CarouselNavigation() {
   const { api, canScrollPrev, canScrollNext } = useCarousel()
   const [current, setCurrent] = React.useState(1)
   const [count, setCount] = React.useState(1)
+  const [showPill, setShowPill] = React.useState(true)
 
   React.useEffect(() => {
     if (!api) return
 
+    let timeoutId: ReturnType<typeof setTimeout>
     const updateState = () => {
       setCount(api.scrollSnapList().length)
       setCurrent(api.selectedScrollSnap() + 1)
+
+      setShowPill(true)
+
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        setShowPill(false)
+      }, 2000)
     }
 
     updateState()
@@ -265,15 +274,19 @@ export function CarouselNavigation() {
   return (
     <>
       {count > 1 && (
-        <div className="pointer-events-none absolute top-4.5 right-2 z-10 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white shadow-sm">
+        <div
+          className={`pointer-events-none absolute top-4.5 right-2 z-10 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white shadow-sm transition-opacity duration-500 ease-in-out ${
+            showPill ? "opacity-100" : "opacity-0"
+          }`}
+        >
           {current} / {count}
         </div>
       )}
       {canScrollPrev && (
-        <CarouselPrevious className="absolute left-3 h-8 w-8 rounded-full border-none bg-background/80 shadow-md hover:bg-background [&>svg]:stroke-accent" />
+        <CarouselPrevious className="absolute left-3 h-8 w-8 rounded-full border-none bg-background/80 shadow-md hover:bg-background [&>svg]:stroke-taupe-900" />
       )}
       {canScrollNext && (
-        <CarouselNext className="absolute right-3 h-8 w-8 rounded-full border-none bg-background/80 shadow-md hover:bg-background [&>svg]:stroke-accent" />
+        <CarouselNext className="absolute right-3 h-8 w-8 rounded-full border-none bg-background/80 shadow-md hover:bg-background [&>svg]:stroke-taupe-900" />
       )}
       {count > 1 && (
         <div className="flex w-full flex-row items-center justify-center gap-2">
