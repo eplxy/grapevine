@@ -1,4 +1,6 @@
+import LoadingScreen from "@/components/loading-screen"
 import { type GetAuthSessionResponseModel } from "@/hooks/queries/auth-queries"
+import { healthQueryOptions } from "@/hooks/queries/health-queries"
 import { userKeys } from "@/hooks/queries/query-keys"
 import { api, baseApi, setAccessToken } from "@/lib/api"
 import type { RouterContext } from "@/router"
@@ -43,6 +45,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
     }
   },
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(healthQueryOptions),
+  pendingComponent: () => <LoadingScreen />,
   component: RootComponent,
 })
 
