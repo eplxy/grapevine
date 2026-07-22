@@ -10,7 +10,7 @@ import { Button } from "./ui/button"
 
 export function MobileBottomNav() {
   return (
-    <nav className="fixed right-0 bottom-0 left-0 z-50 flex h-16 items-center justify-around border-t bg-background px-4 md:hidden">
+    <nav className="z-50 flex min-h-16 items-center justify-around border-t bg-background px-4 pb-[env(safe-area-inset-bottom)] md:hidden">
       <NavButton item={NavigationMapping[0]} />
       <NavButton item={NavigationMapping[1]} />
       <CreateNoteDialog
