@@ -291,7 +291,6 @@ export function CarouselNavigation() {
       {count > 1 && (
         <div className="flex w-full flex-row items-center justify-center gap-2">
           {Array.from({ length: count }, (_, idx) => {
-            console.log(idx, current)
             const matchesCurrent = idx + 1 === current
             return (
               <svg

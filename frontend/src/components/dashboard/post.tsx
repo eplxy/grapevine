@@ -4,7 +4,7 @@ import { generateHTML } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { Card, CardContent, CardHeader } from "../ui/card"
 import {
   Carousel,
@@ -77,13 +77,28 @@ export default function Post(props: PostProps) {
 }
 
 function MediaCarousel({ items }: { items: MediaItem[] }) {
+  const [ratios, setRatios] = useState<number[]>([])
+  const minRatio = ratios.length > 0 ? Math.min(...ratios) : 1
+  const dynamicRatio = minRatio < 1 ? 1 : minRatio
+
   return (
     <Carousel className="relative w-full">
       <CarouselContent>
         {items.map((mediaItem) => (
           <CarouselItem key={mediaItem.display_order + mediaItem.url}>
-            <div className="relative my-2 flex aspect-video w-full items-center justify-center rounded-md bg-muted">
-              <img src={mediaItem.url}></img>
+            <div
+              className="relative my-2 flex w-full items-center justify-center overflow-hidden rounded-md bg-muted transition-all duration-300"
+              style={{ aspectRatio: dynamicRatio }}
+            >
+              <img
+                className="h-full w-full rounded-md object-contain"
+                src={mediaItem.url}
+                onLoad={(e) => {
+                  const { naturalWidth, naturalHeight } = e.currentTarget
+                  const imageRatio = naturalWidth / naturalHeight
+                  setRatios((prev) => [...prev, imageRatio])
+                }}
+              ></img>
             </div>
           </CarouselItem>
         ))}
