@@ -89,7 +89,7 @@ export default function CreateNoteDialog(props: CreateNoteDialogProps) {
         showCloseButton={false}
         className={clsx(
           "flex flex-col transition-none",
-          "h-screen min-w-full rounded-none py-12", // mobile + fullscreen desktop
+          "h-dvh min-w-full rounded-none", // mobile + fullscreen desktop
 
           // We only override the base classes when the user is NOT fullscreen.
           !isFullscreen &&
@@ -169,7 +169,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
     const payload = {
       content: editor.getJSON(),
       text_content: editor.getText(),
-      media_urls
+      media_urls,
     }
 
     postMutation.mutate(payload, {
@@ -185,7 +185,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
         <UserAvatar username={props.user?.username} />
         <div className="flex w-full flex-1 flex-col overflow-hidden">
           <div className="flex w-full justify-between">
-            <span className="text-lg text-primary">
+            <span className="text-lg text-primary pb-1">
               {props.user?.username || "You"}
             </span>
             <Button
