@@ -38,6 +38,7 @@ import MediaUploader, { type MediaUploaderListItem } from "../media-uploader"
 import { Button } from "../ui/button"
 import { Toggle } from "../ui/toggle"
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group"
+import EditorBubbleMenu from "../editor/bubble-menu"
 
 type CreateNoteDialogProps = {
   triggerComponent?: JSX.Element
@@ -157,6 +158,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
         return isSame ? prevFormats : newFormats
       })
     },
+    autofocus: true,
   })
 
   const canSubmit = !isEditorEmpty || itemList.every((item) => !!item.publicURL)
@@ -185,7 +187,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
         <UserAvatar username={props.user?.username} />
         <div className="flex w-full flex-1 flex-col overflow-hidden">
           <div className="flex w-full justify-between">
-            <span className="text-lg text-primary pb-1">
+            <span className="pb-1 text-lg text-primary">
               {props.user?.username || "You"}
             </span>
             <Button
@@ -202,6 +204,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
             editor={editor}
             className="no-scrollbar flex-1 overflow-y-auto"
           />
+          <EditorBubbleMenu editor={editor} activeFormats={activeFormats} isBulletActive={isBulletActive}/>
         </div>
         <Button
           size="icon-sm"

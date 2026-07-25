@@ -11,7 +11,6 @@ export interface GetAuthSessionResponseModel {
   authenticated: boolean
 }
 
-
 export const useAuthSessionQuery = () => {
   return useQuery({
     queryKey: userKeys.session(),
@@ -36,16 +35,16 @@ export const useLogoutMutation = () => {
         .post()
         .json<PostLogoutResponseModel>()
     },
-    onSuccess: () => {
+    onError: (err: Error) => {
+      toast.error(err.message)
+    },
+    onSettled: () => {
+      console.log("setting setQueryData ")
       setAccessToken("")
       queryClient.setQueryData(userKeys.session(), {
         authenticated: false,
         user_id: "",
       })
-      queryClient.invalidateQueries({ queryKey: userKeys.session() })
-    },
-    onError: (err: Error) => {
-      toast.error(err.message)
     },
   })
 }

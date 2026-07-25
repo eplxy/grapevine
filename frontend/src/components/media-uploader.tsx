@@ -243,7 +243,7 @@ function MediaPreview({
       {onRemove && (
         <Button
           size="icon-xs"
-          className="absolute inset-1 flex opacity-0 hover:opacity-100"
+          className="absolute inset-1 flex lg:opacity-0 hover:opacity-100"
           asChild
           onClick={onRemove}
         >

@@ -294,6 +294,7 @@ export function CarouselNavigation() {
             const matchesCurrent = idx + 1 === current
             return (
               <svg
+                key={idx}
                 width={matchesCurrent ? "8" : "6"}
                 height={matchesCurrent ? "8" : "6"}
                 viewBox={matchesCurrent ? "0 0 8 8 " : "0 0 7 6"}

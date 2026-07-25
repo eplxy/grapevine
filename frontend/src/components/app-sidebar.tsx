@@ -136,7 +136,7 @@ export function DashboardSettingsPopover({
   return (
     <Popover>
       <PopoverTrigger asChild>{triggerComponent}</PopoverTrigger>
-      <PopoverContent side={side}>
+      <PopoverContent side={side} sideOffset={16}>
         <PopoverTitle>Extra options</PopoverTitle>
         <div className="grid gap-4">
           <div className="grid gap-2">
@@ -170,6 +170,7 @@ export function DashboardSettingsPopover({
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
+            <AuthButton />
           </div>
         </div>
       </PopoverContent>
