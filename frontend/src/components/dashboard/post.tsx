@@ -13,6 +13,7 @@ import {
   CarouselNavigation,
 } from "../ui/carousel"
 import UserAvatar from "../user-avatar"
+import PostCarouselImage from "./post-carousel-image"
 
 type PostProps = {
   feedItem: FeedItemModel
@@ -90,15 +91,10 @@ function MediaCarousel({ items }: { items: MediaItem[] }) {
               className="relative my-2 flex w-full items-center justify-center overflow-hidden rounded-md bg-muted transition-all duration-300"
               style={{ aspectRatio: dynamicRatio }}
             >
-              <img
-                className="h-full w-full rounded-md object-contain"
-                src={mediaItem.url}
-                onLoad={(e) => {
-                  const { naturalWidth, naturalHeight } = e.currentTarget
-                  const imageRatio = naturalWidth / naturalHeight
-                  setRatios((prev) => [...prev, imageRatio])
-                }}
-              ></img>
+              <PostCarouselImage
+                url={mediaItem.url}
+                onImageLoad={(ratio) => setRatios((prev) => [...prev, ratio])}
+              />
             </div>
           </CarouselItem>
         ))}
