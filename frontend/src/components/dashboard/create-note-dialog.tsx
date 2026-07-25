@@ -5,7 +5,6 @@ import {
 import type { JSX } from "react/jsx-runtime"
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogFooter,
   DialogTrigger,
@@ -34,11 +33,12 @@ import {
   type MouseEvent,
   type SetStateAction,
 } from "react"
+import CancelConfirmationAlertDialog from "../dialog/cancel-confirmation"
+import EditorBubbleMenu from "../editor/bubble-menu"
 import MediaUploader, { type MediaUploaderListItem } from "../media-uploader"
 import { Button } from "../ui/button"
 import { Toggle } from "../ui/toggle"
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group"
-import EditorBubbleMenu from "../editor/bubble-menu"
 
 type CreateNoteDialogProps = {
   triggerComponent?: JSX.Element
@@ -204,7 +204,11 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
             editor={editor}
             className="no-scrollbar flex-1 overflow-y-auto"
           />
-          <EditorBubbleMenu editor={editor} activeFormats={activeFormats} isBulletActive={isBulletActive}/>
+          <EditorBubbleMenu
+            editor={editor}
+            activeFormats={activeFormats}
+            isBulletActive={isBulletActive}
+          />
         </div>
         <Button
           size="icon-sm"
@@ -265,11 +269,16 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
               </div>
             </div>
             <div className="flex gap-2">
-              <DialogClose asChild>
-                <Button variant="secondary" size={"lg"}>
-                  Cancel
-                </Button>
-              </DialogClose>
+              <CancelConfirmationAlertDialog
+                bypassAlert={isEditorEmpty}
+                triggerComponent={
+                  <Button variant="secondary" size={"lg"}>
+                    Cancel
+                  </Button>
+                }
+                title="Are you sure you want to discard this post?"
+                onConfirm={props.closeDialog}
+              />
               <Button size="lg" disabled={!canSubmit} onClick={handleSubmit}>
                 Post
               </Button>
