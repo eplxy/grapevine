@@ -1,12 +1,12 @@
-import {
-  AUTH_STALE_TIME_MS,
-  type GetAuthSessionResponseModel,
-} from "@/hooks/queries/auth-queries"
+import LoadingScreen from "@/components/loading-screen"
+import { type GetAuthSessionResponseModel } from "@/hooks/queries/auth-queries"
+import { healthQueryOptions } from "@/hooks/queries/health-queries"
 import { userKeys } from "@/hooks/queries/query-keys"
 import { api, baseApi, setAccessToken } from "@/lib/api"
 import type { RouterContext } from "@/router"
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
+
+export const AUTH_STALE_TIME_MS = 1000 * 60 * 5
 
 const initializeAuthSession =
   async (): Promise<GetAuthSessionResponseModel> => {
@@ -17,7 +17,7 @@ const initializeAuthSession =
         .json<{ access_token: string }>()
       if (!res.access_token) {
         // refresh failed, user is logged out
-        return { authenticated: false, user_id: "" }
+        return { authenticated: false, user_id: "", username: "" }
       }
 
       // refresh token exists
@@ -26,7 +26,7 @@ const initializeAuthSession =
       return await api.url("/auth/me").get().json<GetAuthSessionResponseModel>()
     } catch (error) {
       console.error("Initialization failed:", error)
-      return { authenticated: false, user_id: "" }
+      return { authenticated: false, user_id: "", username: "" }
     }
   }
 
@@ -45,6 +45,9 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       },
     }
   },
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(healthQueryOptions),
+  pendingComponent: () => <LoadingScreen />,
   component: RootComponent,
 })
 
@@ -54,7 +57,6 @@ function RootComponent() {
       <div className="flex min-h-svh">
         <Outlet />
       </div>
-      <TanStackRouterDevtools />
     </>
   )
 }

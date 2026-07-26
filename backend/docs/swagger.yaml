@@ -1,4 +1,65 @@
 definitions:
+  handlers.CreateNoteRequest:
+    properties:
+      content:
+        type: object
+      media_urls:
+        items:
+          type: string
+        type: array
+      text_content:
+        type: string
+    required:
+    - content
+    type: object
+  handlers.CreateReviewRequest:
+    properties:
+      content:
+        type: object
+      location:
+        $ref: '#/definitions/handlers.LocationUpsertInfo'
+      media_urls:
+        items:
+          type: string
+        type: array
+      rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+      text_content:
+        type: string
+    required:
+    - location
+    - rating
+    type: object
+  handlers.LocationUpsertInfo:
+    properties:
+      address:
+        type: string
+      google_place_id:
+        type: string
+      lat:
+        type: number
+      lng:
+        type: number
+      location_type:
+        type: string
+      name:
+        type: string
+    required:
+    - address
+    - google_place_id
+    - lat
+    - lng
+    - name
+    type: object
+  handlers.UploadURLResponse:
+    properties:
+      publicUrl:
+        type: string
+      signedUrl:
+        type: string
+    type: object
   handlers.authRequest:
     properties:
       name:
@@ -9,6 +70,42 @@ definitions:
     required:
     - name
     - password
+    type: object
+  models.FeedItem:
+    properties:
+      author_id:
+        type: integer
+      author_name:
+        type: string
+      content:
+        type: object
+      created_at:
+        type: string
+      location_id:
+        type: integer
+      location_name:
+        type: string
+      media:
+        items:
+          $ref: '#/definitions/models.MediaItem'
+        type: array
+      post_id:
+        type: integer
+      post_type:
+        description: '"note" or "review"'
+        type: string
+      rating:
+        type: integer
+      text_content:
+        type: string
+    type: object
+  models.MediaItem:
+    properties:
+      media_type:
+        description: '"image" or "video"'
+        type: string
+      url:
+        type: string
     type: object
   router.PingResponse:
     properties:
@@ -88,7 +185,7 @@ paths:
       - auth
   /auth/me:
     get:
-      description: Return the current authenticated user's id.
+      description: Return the current authenticated user's id and name.
       produces:
       - application/json
       responses:
@@ -177,6 +274,46 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /media/upload-url:
+    get:
+      description: Generates a temporary signed URL to upload media directly to Google
+        Cloud Storage from the frontend. Returns both the signed URL for the PUT request
+        and the future public URL.
+      parameters:
+      - description: The name of the file (e.g., review-pic.jpg)
+        in: query
+        name: fileName
+        required: true
+        type: string
+      - description: The exact MIME type of the file (e.g., image/jpeg)
+        in: query
+        name: contentType
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully generated URLs
+          schema:
+            $ref: '#/definitions/handlers.UploadURLResponse'
+        "400":
+          description: Missing fileName or contentType
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to generate upload URL
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Generate GCS signed URL
+      tags:
+      - media
   /ping:
     get:
       consumes:
@@ -192,6 +329,162 @@ paths:
       summary: Ping endpoint
       tags:
       - health
+  /posts:
+    get:
+      description: Returns paginated posts for the main feed.
+      parameters:
+      - default: 20
+        description: Pagination limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Pagination offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.FeedItem'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Home Feed
+      tags:
+      - posts
+  /posts/{id}:
+    get:
+      description: Fetches post details including media and location info.
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.FeedItem'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Post by ID
+      tags:
+      - posts
+  /posts/note:
+    post:
+      consumes:
+      - application/json
+      description: Create a post not attached to a location.
+      parameters:
+      - description: Note payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateNoteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a Note
+      tags:
+      - posts
+  /posts/review:
+    post:
+      consumes:
+      - application/json
+      description: Saves Google location data to cache, then creates a review attached
+        to it.
+      parameters:
+      - description: Review payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create a Review
+      tags:
+      - posts
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

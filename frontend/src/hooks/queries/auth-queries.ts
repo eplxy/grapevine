@@ -3,13 +3,13 @@ import { useMutation, useQuery } from "@tanstack/react-query"
 import { userKeys } from "./query-keys"
 import { queryClient } from "@/router"
 import { toast } from "react-toastify"
+import { AUTH_STALE_TIME_MS } from "@/routes/__root"
 
 export interface GetAuthSessionResponseModel {
   user_id: string
+  username: string
   authenticated: boolean
 }
-
-export const AUTH_STALE_TIME_MS = 1000 * 60 * 5
 
 export const useAuthSessionQuery = () => {
   return useQuery({
@@ -35,16 +35,16 @@ export const useLogoutMutation = () => {
         .post()
         .json<PostLogoutResponseModel>()
     },
-    onSuccess: () => {
+    onError: (err: Error) => {
+      toast.error(err.message)
+    },
+    onSettled: () => {
+      console.log("setting setQueryData ")
       setAccessToken("")
       queryClient.setQueryData(userKeys.session(), {
         authenticated: false,
         user_id: "",
       })
-      queryClient.invalidateQueries({ queryKey: userKeys.session() })
-    },
-    onError: (err: Error) => {
-      toast.error(err.message)
     },
   })
 }

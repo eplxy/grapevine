@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 
+	"cloud.google.com/go/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
@@ -37,7 +38,13 @@ func main() {
 	}
 	defer dbpool.Close()
 
+	ctx := context.Background()
+	gcsClient, err := storage.NewClient(ctx)
+
 	userRepo := database.NewUserRepository(dbpool)
+	postRepo := database.NewPostRepository(dbpool)
+	locationRepo := database.NewLocationRepository(dbpool)
+	mediaRepo := database.NewMediaRepository(gcsClient, os.Getenv("GCS_BUCKET_NAME"))
 
 	env, err := constants.EnvironmentStringToInt(os.Getenv("APP_ENV"))
 
@@ -47,7 +54,9 @@ func main() {
 	}
 
 	authHandler := handlers.NewAuthHandler(userRepo, env == constants.Production)
+	postHandler := handlers.NewPostHandler(postRepo, locationRepo, mediaRepo)
+	mediaHandler := handlers.NewMediaHandler(mediaRepo)
 
-	engine := router.SetupRouter(env, authHandler)
+	engine := router.SetupRouter(env, authHandler, postHandler, mediaHandler)
 	engine.Run()
 }

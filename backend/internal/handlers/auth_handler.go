@@ -93,13 +93,13 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 	}
 
 	// Issue Tokens
-	accessToken, err := utils.GenerateAccessToken(userID)
+	accessToken, err := utils.GenerateAccessToken(userID, req.Name)
 	if err != nil {
 		responses.WriteError(c, http.StatusInternalServerError, "access_token_failed", "Failed to generate access token")
 		return
 	}
 
-	refreshToken, err := utils.GenerateRefreshToken(userID)
+	refreshToken, err := utils.GenerateRefreshToken(userID, req.Name)
 	if err != nil {
 		responses.WriteError(c, http.StatusInternalServerError, "refresh_token_failed", "Failed to generate refresh token")
 		return
@@ -139,7 +139,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 	}
 
 	// token is valid, issue a new short-lived access token
-	newAccessToken, err := utils.GenerateAccessToken(claims.UserID)
+	newAccessToken, err := utils.GenerateAccessToken(claims.UserID, claims.Username)
 	if err != nil {
 		responses.WriteError(c, http.StatusInternalServerError, "access_token_failed", "Failed to rotate access token")
 		return
@@ -152,7 +152,7 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 
 // MeHandler returns the authenticated user's identity.
 // @Summary      Get current user session
-// @Description  Return the current authenticated user's id.
+// @Description  Return the current authenticated user's id and name.
 // @Tags         auth
 // @Security     BearerAuth
 // @Produce      json
@@ -161,9 +161,10 @@ func (h *AuthHandler) RefreshHandler(c *gin.Context) {
 // @Router       /auth/me [get]
 func (h *AuthHandler) MeHandler(c *gin.Context) {
 
-	userID, exists := c.Get("userID")
+	userID, err := GetUserIDAsInt(c) // check claims
+	if err != nil {
+		responses.WriteUnauthorized(c, "unauthorized", err.Error())
 
-	if !exists {
 		// Return 200 OK to silence the browser console,
 		// but tell the frontend they aren't logged in.
 		c.JSON(http.StatusOK, gin.H{
@@ -173,8 +174,14 @@ func (h *AuthHandler) MeHandler(c *gin.Context) {
 		return
 	}
 
+	username, ok := c.Get("username")
+	if !ok {
+		responses.WriteError(c, http.StatusNotFound, "not_found", err.Error())
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"user_id":       userID,
+		"username":      username,
 		"authenticated": true,
 	})
 }

@@ -1,5 +1,8 @@
-import AuthButton from "@/components/buttons/auth-button"
-import PingButton from "@/components/buttons/ping-button"
+import { AppSidebar } from "@/components/app-sidebar"
+import DashboardContent from "@/components/dashboard/dashboard-content"
+import DashboardRightPanel from "@/components/dashboard/dashboard-right-panel"
+import { MobileBottomNav } from "@/components/mobile-navbar"
+import { SidebarProvider } from "@/components/ui/sidebar"
 import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/")({
@@ -8,11 +11,19 @@ export const Route = createFileRoute("/")({
 
 function RouteComponent() {
   return (
-    <div>
-      <h1>Welcome home</h1>
-
-      <PingButton />
-      <AuthButton />
-    </div>
+    <SidebarProvider
+      defaultOpen={window.matchMedia(`(min-width: 1280px)`).matches}
+    >
+      <div className="flex h-dvh w-full flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          <div className="mx-auto flex w-full max-w-300 justify-center">
+            <AppSidebar />
+            <DashboardContent />
+            <DashboardRightPanel />
+          </div>
+        </div>
+        <MobileBottomNav />
+      </div>
+    </SidebarProvider>
   )
 }

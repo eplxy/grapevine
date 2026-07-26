@@ -16,5 +16,22 @@ export const userKeys = {
   register: ["register"] as const,
   auth: ["auth"] as const,
   session: () => [...userKeys.auth, "session"] as const,
-  logout: () => [...userKeys.auth, "logout"] as const
+  logout: () => [...userKeys.auth, "logout"] as const,
+}
+
+export const postKeys = {
+  posts: ["posts"] as const,
+  getFeed: (limit: number, offset: number) => ["feed", limit, offset],
+  uploadNote: () => [...postKeys.posts, "upload", "note"] as const,
+}
+
+export const mediaKeys = {
+  media: ["media"] as const,
+  upload: (file: File) => [
+    ...mediaKeys.media,
+    "upload",
+    file.name,
+    file.type,
+    file.lastModified
+  ],
 }

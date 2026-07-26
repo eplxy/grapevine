@@ -12,7 +12,7 @@ import { hasEmoji } from "@/lib/utils/string-utils"
 import { createFileRoute, Link, redirect } from "@tanstack/react-router"
 import { useState, type KeyboardEvent } from "react"
 
-export const Route = createFileRoute("/register")({
+export const Route = createFileRoute("/(auth)/register")({
   component: RouteComponent,
   beforeLoad: ({ context }) => {
     if (context.auth.isAuthenticated) {

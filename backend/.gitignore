@@ -1,3 +1,4 @@
 .env
 tmp/
 .exe
+*service-account.json
