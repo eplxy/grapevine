@@ -42,6 +42,8 @@ import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group"
 
 type CreateNoteDialogProps = {
   triggerComponent?: JSX.Element
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
 const placeholders: string[] = [
@@ -72,17 +74,19 @@ export default function CreateNoteDialog(props: CreateNoteDialogProps) {
 
   const user = sessionQuery.data
 
-  const [isOpen, setIsOpen] = useState<boolean>(false)
+  const [internalIsOpen, setInternalIsOpen] = useState<boolean>(false)
+  const isOpen = props.open !== undefined ? props.open : internalIsOpen
+  const setIsOpen =
+    props.onOpenChange !== undefined ? props.onOpenChange : setInternalIsOpen
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false) // always fullscreen under lg
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger
-        asChild={!!props.triggerComponent}
-        onClick={handleTriggerClick}
-      >
-        {props.triggerComponent || "New"}
-      </DialogTrigger>
+      {props.triggerComponent && (
+        <DialogTrigger asChild onClick={handleTriggerClick}>
+          {props.triggerComponent}
+        </DialogTrigger>
+      )}
       <DialogContent
         onPointerDownOutside={(ev) => ev.preventDefault()}
         onEscapeKeyDown={(ev) => ev.preventDefault()}

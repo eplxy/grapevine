@@ -1,7 +1,7 @@
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/app-navigation/app-sidebar"
 import DashboardContent from "@/components/dashboard/dashboard-content"
 import DashboardRightPanel from "@/components/dashboard/dashboard-right-panel"
-import { MobileBottomNav } from "@/components/mobile-navbar"
+import { MobileBottomNav } from "@/components/app-navigation/mobile-navbar"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { createFileRoute } from "@tanstack/react-router"
 

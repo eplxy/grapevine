@@ -2,9 +2,10 @@ import {
   useAuthSessionQuery,
   useLogoutMutation,
 } from "@/hooks/queries/auth-queries"
-import { Button } from "../ui/button"
-import type { ComponentPropsWithRef, ReactNode } from "react"
+import { useNavigate } from "@tanstack/react-router"
 import { Loader, LogIn, LogOut } from "lucide-react"
+import type { ComponentPropsWithRef, ReactNode } from "react"
+import { Button } from "../ui/button"
 
 type AuthButtonProps = {
   loggedInComponent?: ReactNode
@@ -15,6 +16,7 @@ export default function AuthButton(props: AuthButtonProps) {
   const { hideIfLoggedIn, loggedInComponent, ...rest } = props
   const authSessionQuery = useAuthSessionQuery()
   const logoutMutation = useLogoutMutation()
+  const navigate = useNavigate()
 
   const isLoggedIn = authSessionQuery.data?.authenticated === true
   const isLoggingOut = logoutMutation.isPending

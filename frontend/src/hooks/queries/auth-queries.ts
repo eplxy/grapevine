@@ -1,9 +1,10 @@
 import { api, setAccessToken } from "@/lib/api"
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { userKeys } from "./query-keys"
 import { queryClient } from "@/router"
-import { toast } from "react-toastify"
 import { AUTH_STALE_TIME_MS } from "@/routes/__root"
+import { useMutation, useQuery } from "@tanstack/react-query"
+import { useNavigate } from "@tanstack/react-router"
+import { toast } from "react-toastify"
+import { userKeys } from "./query-keys"
 
 export interface GetAuthSessionResponseModel {
   user_id: string
@@ -27,6 +28,8 @@ interface PostLogoutResponseModel {
 }
 
 export const useLogoutMutation = () => {
+  const navigate = useNavigate()
+
   return useMutation({
     mutationKey: userKeys.logout(),
     mutationFn: async () => {
@@ -45,6 +48,7 @@ export const useLogoutMutation = () => {
         authenticated: false,
         user_id: "",
       })
+      setTimeout(() => navigate({ to: "/", reloadDocument: true }), 2000)
     },
   })
 }
