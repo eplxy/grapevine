@@ -1,5 +1,5 @@
 import type { FeedItemModel, MediaItem } from "@/models/models"
-import { EDITOR_CLASSES, VIEWER_CLASSES } from "@/styles/styles"
+import { VIEWER_CLASSES } from "@/styles/styles"
 import { generateHTML } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import dayjs from "dayjs"
