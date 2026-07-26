@@ -21,6 +21,7 @@ export default function EditorBubbleMenu({
     <BubbleMenu
       className="flex items-center gap-1 rounded-md border bg-popover p-1 shadow-md"
       editor={editor}
+      options={{ placement: "bottom-end" }}
     >
       <div className="flex items-center gap-2">
         <ToggleGroup

@@ -1,5 +1,5 @@
 import type { FeedItemModel, MediaItem } from "@/models/models"
-import { EDITOR_CLASSES } from "@/styles/styles"
+import { EDITOR_CLASSES, VIEWER_CLASSES } from "@/styles/styles"
 import { generateHTML } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import dayjs from "dayjs"
@@ -54,7 +54,7 @@ export default function Post(props: PostProps) {
       <CardContent>
         {!!feedItem.content && (
           <div
-            className={EDITOR_CLASSES}
+            className={VIEWER_CLASSES}
             dangerouslySetInnerHTML={{ __html: html }}
           />
         )}
