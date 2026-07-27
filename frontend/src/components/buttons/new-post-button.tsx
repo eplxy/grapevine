@@ -1,6 +1,6 @@
 import { useAuthSessionQuery } from "@/hooks/queries/auth-queries"
 import { MessageSquareHeart, Pencil, SquarePen } from "lucide-react"
-import { useState, type ComponentPropsWithRef, type JSX } from "react"
+import { useState, type ComponentPropsWithRef, type ReactNode } from "react"
 import CreateNoteDialog from "../dashboard/create-note-dialog"
 import LoginDialog from "../dialog/login-dialog"
 import { Button } from "../ui/button"
@@ -41,7 +41,7 @@ export default function NewPostButton(props: NewPostButtonProps) {
 }
 
 export type NewPostTypePopoverProps = {
-  triggerComponent?: JSX.Element
+  triggerComponent?: ReactNode
   side?: "top" | "right" | "bottom" | "left"
 }
 

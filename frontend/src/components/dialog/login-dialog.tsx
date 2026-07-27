@@ -1,7 +1,6 @@
 import { useLoginMutation } from "@/hooks/queries/user-queries"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { useState, type KeyboardEvent } from "react"
-import type { JSX } from "react/jsx-runtime"
+import { useState, type KeyboardEvent, type ReactNode } from "react"
 import { Button } from "../ui/button"
 import {
   Dialog,
@@ -18,7 +17,7 @@ import { Input } from "../ui/input"
 export default function LoginDialog({
   triggerComponent,
 }: {
-  triggerComponent: JSX.Element
+  triggerComponent: ReactNode
 }) {
   const [name, setName] = useState<string>("")
   const [password, setPassword] = useState<string>("")
