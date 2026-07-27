@@ -10,6 +10,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "../ui/popover"
+import { Link } from "@tanstack/react-router"
 
 export type NewPostButtonProps = {
   popoverSide?: "top" | "right" | "bottom" | "left"
@@ -57,9 +58,11 @@ export function NewPostTypePopover(props: NewPostTypePopoverProps) {
         </PopoverTrigger>
         <PopoverContent side={props.side || "right"} sideOffset={16}>
           <PopoverTitle>New post</PopoverTitle>
-          <Button>
+          <Button asChild>
+            <Link to={"/review/new"}>
             <MessageSquareHeart />
-            Review
+              Review
+            </Link>
           </Button>
           <Button onClick={() => setIsNoteDialogOpen(true)}>
             <SquarePen />
