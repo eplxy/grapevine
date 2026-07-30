@@ -251,6 +251,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/location/autocomplete": {
+            "post": {
+                "description": "Get place predictions based on a text string. Defaults to a circular bias around Montreal.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "location"
+                ],
+                "summary": "Autocomplete places",
+                "parameters": [
+                    {
+                        "description": "Autocomplete query and optional rectangular location bias",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LocationAutocompleteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Google Places Autocomplete response",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LocationAutocompleteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid JSON or missing required fields",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Google Places API failure",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/media/upload-url": {
             "get": {
                 "security": [
@@ -573,6 +619,23 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.AutocompleteLocationBiasRectangleDTO": {
+            "type": "object",
+            "properties": {
+                "east": {
+                    "type": "number"
+                },
+                "north": {
+                    "type": "number"
+                },
+                "south": {
+                    "type": "number"
+                },
+                "west": {
+                    "type": "number"
+                }
+            }
+        },
         "handlers.CreateNoteRequest": {
             "type": "object",
             "required": [
@@ -619,6 +682,31 @@ const docTemplate = `{
                 },
                 "text_content": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.LocationAutocompleteRequest": {
+            "type": "object",
+            "required": [
+                "query"
+            ],
+            "properties": {
+                "location_bias": {
+                    "$ref": "#/definitions/handlers.AutocompleteLocationBiasRectangleDTO"
+                },
+                "query": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.LocationAutocompleteResponse": {
+            "type": "object",
+            "properties": {
+                "suggestions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.AutocompleteSuggestion"
+                    }
                 }
             }
         },
@@ -679,6 +767,47 @@ const docTemplate = `{
                 }
             }
         },
+        "models.AutocompleteSuggestion": {
+            "type": "object",
+            "required": [
+                "address",
+                "name",
+                "place_id"
+            ],
+            "properties": {
+                "address": {
+                    "description": "secondary text from places api response",
+                    "type": "string"
+                },
+                "matches": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "end_offset": {
+                                "type": "integer"
+                            },
+                            "start_offset": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                },
+                "name": {
+                    "description": "primary text from places api response",
+                    "type": "string"
+                },
+                "place_id": {
+                    "type": "string"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "models.FeedItem": {
             "type": "object",
             "properties": {
@@ -724,6 +853,10 @@ const docTemplate = `{
         "models.MediaItem": {
             "type": "object",
             "properties": {
+                "display_order": {
+                    "description": "1-indexed display order",
+                    "type": "integer"
+                },
                 "media_type": {
                     "description": "\"image\" or \"video\"",
                     "type": "string"

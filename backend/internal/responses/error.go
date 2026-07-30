@@ -25,3 +25,7 @@ func WriteBadRequest(c *gin.Context, code, message string) {
 func WriteUnauthorized(c *gin.Context, code, message string) {
 	WriteError(c, http.StatusUnauthorized, code, message)
 }
+
+func WriteInternalError(c *gin.Context, code, message string) {
+	WriteError(c, http.StatusInternalServerError, code, message)
+}

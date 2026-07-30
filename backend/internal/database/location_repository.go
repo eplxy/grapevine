@@ -7,6 +7,7 @@ import (
 
 	_ "embed"
 
+	places "cloud.google.com/go/maps/places/apiv1"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -15,7 +16,8 @@ import (
 var upsertLocationsSQL string
 
 type LocationRepository struct {
-	db *pgxpool.Pool
+	db           *pgxpool.Pool
+	placesClient *places.Client
 }
 
 type LocationDomain interface {

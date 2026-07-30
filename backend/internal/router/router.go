@@ -15,9 +15,13 @@ func SetupRouter(
 	env constants.Environment,
 	authHandler *handlers.AuthHandler,
 	postHandler *handlers.PostHandler,
-	mediaHandler *handlers.MediaHandler) *gin.Engine {
+	mediaHandler *handlers.MediaHandler,
+	locationHandler *handlers.LocationHandler) *gin.Engine {
+
 	router := gin.Default()
 	router.Use(cors.New(getCorsConfig(env)))
+
+	autocompleteLimiter := middleware.NewIPRateLimiter(3, 5)
 
 	authGroup := router.Group("/auth")
 
@@ -37,6 +41,10 @@ func SetupRouter(
 	mediaGroup := router.Group("/media")
 
 	mediaGroup.GET("/upload-url", middleware.AuthMiddleware(), mediaHandler.GetUploadURLHandler)
+
+	locationGroup := router.Group("/location")
+
+	locationGroup.POST("/autocomplete", middleware.RateLimitMiddleware(autocompleteLimiter), locationHandler.LocationAutocompleteHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

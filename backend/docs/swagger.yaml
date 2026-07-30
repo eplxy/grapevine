@@ -1,4 +1,15 @@
 definitions:
+  handlers.AutocompleteLocationBiasRectangleDTO:
+    properties:
+      east:
+        type: number
+      north:
+        type: number
+      south:
+        type: number
+      west:
+        type: number
+    type: object
   handlers.CreateNoteRequest:
     properties:
       content:
@@ -31,6 +42,22 @@ definitions:
     required:
     - location
     - rating
+    type: object
+  handlers.LocationAutocompleteRequest:
+    properties:
+      location_bias:
+        $ref: '#/definitions/handlers.AutocompleteLocationBiasRectangleDTO'
+      query:
+        type: string
+    required:
+    - query
+    type: object
+  handlers.LocationAutocompleteResponse:
+    properties:
+      suggestions:
+        items:
+          $ref: '#/definitions/models.AutocompleteSuggestion'
+        type: array
     type: object
   handlers.LocationUpsertInfo:
     properties:
@@ -71,6 +98,34 @@ definitions:
     - name
     - password
     type: object
+  models.AutocompleteSuggestion:
+    properties:
+      address:
+        description: secondary text from places api response
+        type: string
+      matches:
+        items:
+          properties:
+            end_offset:
+              type: integer
+            start_offset:
+              type: integer
+          type: object
+        type: array
+      name:
+        description: primary text from places api response
+        type: string
+      place_id:
+        type: string
+      types:
+        items:
+          type: string
+        type: array
+    required:
+    - address
+    - name
+    - place_id
+    type: object
   models.FeedItem:
     properties:
       author_id:
@@ -101,6 +156,9 @@ definitions:
     type: object
   models.MediaItem:
     properties:
+      display_order:
+        description: 1-indexed display order
+        type: integer
       media_type:
         description: '"image" or "video"'
         type: string
@@ -274,6 +332,37 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /location/autocomplete:
+    post:
+      consumes:
+      - application/json
+      description: Get place predictions based on a text string. Defaults to a circular
+        bias around Montreal.
+      parameters:
+      - description: Autocomplete query and optional rectangular location bias
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LocationAutocompleteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Google Places Autocomplete response
+          schema:
+            $ref: '#/definitions/handlers.LocationAutocompleteResponse'
+        "400":
+          description: Bad Request - Invalid JSON or missing required fields
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error - Google Places API failure
+          schema:
+            type: object
+      summary: Autocomplete places
+      tags:
+      - location
   /media/upload-url:
     get:
       description: Generates a temporary signed URL to upload media directly to Google
