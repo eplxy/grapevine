@@ -32,6 +32,15 @@ export const mediaKeys = {
     "upload",
     file.name,
     file.type,
-    file.lastModified
+    file.lastModified,
+  ],
+}
+
+export const locationKeys = {
+  location: ["location"] as const,
+  autocomplete: (query: string) => [
+    ...locationKeys.location,
+    "autocomplete",
+    query,
   ],
 }

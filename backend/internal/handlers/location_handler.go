@@ -104,7 +104,7 @@ func (h *LocationHandler) LocationAutocompleteHandler(c *gin.Context) {
 
 func mapPlacesResponseToAPI(placesRes *placespb.AutocompletePlacesResponse) (LocationAutocompleteResponse, error) {
 
-	var finalSuggestions []models.AutocompleteSuggestion
+	finalSuggestions := []models.AutocompleteSuggestion{}
 	if placesRes == nil {
 		return LocationAutocompleteResponse{Suggestions: finalSuggestions}, nil
 	}

@@ -1,11 +1,11 @@
 import type { JSONContent } from "@tiptap/react"
 
 export interface FeedItemModel {
-  post_id: number,
-  post_type: PostType,
-  content?: JSONContent,
-  text_content?: string,
-  created_at: string,
+  post_id: number
+  post_type: PostType
+  content?: JSONContent
+  text_content?: string
+  created_at: string
   author_id: string
   author_name: string
   rating?: number
@@ -23,7 +23,18 @@ export interface MediaItem {
 
 export const PostType = {
   Note: "note",
-  Review: "review"
+  Review: "review",
 } as const
 
 export type PostType = (typeof PostType)[keyof typeof PostType]
+
+export interface LocationAutocompleteSuggestion {
+  place_id: string
+  name: string
+  address: string
+  types?: string[]
+  matches?: {
+    startOffset: number
+    endOffset: number
+  }[]
+}
