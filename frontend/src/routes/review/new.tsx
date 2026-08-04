@@ -1,5 +1,5 @@
 import LocationSelector from "@/components/review/location-selector"
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { ChevronLeft } from "lucide-react"
 
 export const Route = createFileRoute("/review/new")({
@@ -7,8 +7,6 @@ export const Route = createFileRoute("/review/new")({
 })
 
 function RouteComponent() {
-  const navigate = useNavigate()
-
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden py-4">
       <nav className="mb-2 flex h-auto flex-row items-center gap-2 border-b px-4 pb-2">
