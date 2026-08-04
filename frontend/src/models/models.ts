@@ -34,7 +34,7 @@ export interface LocationAutocompleteSuggestion {
   address: string
   types?: string[]
   matches?: {
-    startOffset: number
-    endOffset: number
+    start_offset: number
+    end_offset: number
   }[]
 }

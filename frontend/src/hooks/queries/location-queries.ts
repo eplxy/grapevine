@@ -11,5 +11,6 @@ export const useLocationAutocomplete = (query: string) => {
         .url("/location/autocomplete")
         .post({ query })
         .json<LocationAutocompleteSuggestion[]>((res) => res.suggestions),
+    enabled: query.length > 0,
   })
 }

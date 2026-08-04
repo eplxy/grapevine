@@ -82,8 +82,9 @@ func (h *LocationHandler) LocationAutocompleteHandler(c *gin.Context) {
 	}
 
 	placesReq := &placespb.AutocompletePlacesRequest{
-		Input:        req.Query,
-		LocationBias: bias,
+		Input:                req.Query,
+		LocationBias:         bias,
+		IncludedPrimaryTypes: constants.SEARCHABLE_LOCATION_PRIMARY_TYPES,
 	}
 
 	autocompleteResp, err := h.PlacesClient.AutocompletePlaces(c.Request.Context(), placesReq)

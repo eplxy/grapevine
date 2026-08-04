@@ -39,3 +39,5 @@ var DEFAULT_AUTOCOMPLETE_AUTOCOMPLETE_BIAS = &placespb.AutocompletePlacesRequest
 		},
 	},
 }
+
+var SEARCHABLE_LOCATION_PRIMARY_TYPES = []string{"restaurant", "cafe", "bar", "diner", "food"}

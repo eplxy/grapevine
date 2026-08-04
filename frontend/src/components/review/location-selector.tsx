@@ -1,49 +1,19 @@
+import type { LocationAutocompleteSuggestion } from "@/models/models"
 import { useState } from "react"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "../ui/command"
-import { useLocationAutocomplete } from "@/hooks/queries/location-queries"
-import { useDebounce } from "@/hooks/use-debounce"
+import LocationAutocomplete from "./location-autocomplete"
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
+import { Button } from "../ui/button"
 
 export type LocationSelectorProps = {}
 
+export type LocationModel = {} & LocationAutocompleteSuggestion
+
 export default function LocationSelector(props: LocationSelectorProps) {
-  const [input, setInput] = useState<string>("")
-  const [query, setQuery] = useState<string>("")
-
-  const autocompleteQuery = useLocationAutocomplete(input)
-
-
-  const debouncedSetQuery = useDebounce(setQuery)
+  const [location, setLocation] = useState<LocationModel>()
 
   return (
-    <div>
-      <Command>
-        <CommandInput
-          placeholder="Search for a restaurant, cafe, bar..."
-          value={input}
-          onValueChange={setInput}
-        />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup>
-            {autocompleteQuery.data?.map((suggestion) => {
-
-
-              return (
-                <CommandItem value={suggestion.name} key={suggestion.place_id}>
-                  {suggestion.name}
-                </CommandItem>
-              )
-            })}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </div>
+    <>
+          <LocationAutocomplete location={location} setLocation={setLocation} />
+    </>
   )
 }
