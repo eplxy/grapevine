@@ -205,7 +205,7 @@ func (h *PostHandler) GetHomeFeedHandler(c *gin.Context) {
 
 	feed, err := h.postRepo.GetHomeFeed(c.Request.Context(), limit, offset)
 	if err != nil {
-		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", fmt.Sprintf("Failed to load feed. err: %s", err))
+		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", "Failed to load feed.")
 		return
 	}
 
@@ -239,7 +239,7 @@ func (h *PostHandler) GetPostByIDHandler(c *gin.Context) {
 			responses.WriteError(c, http.StatusNotFound, "not_found", "Post does not exist")
 			return
 		}
-		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", fmt.Sprintf("Failed to load post: %s", err.Error()))
+		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", "Failed to load post")
 		return
 	}
 

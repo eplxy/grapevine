@@ -16,7 +16,7 @@ import { EditorContent, useEditor } from "@tiptap/react"
 
 import { useUploadNoteMutation } from "@/hooks/queries/post-queries"
 import { EDITOR_CLASSES } from "@/styles/styles"
-import { useNavigate } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 import StarterKit from "@tiptap/starter-kit"
 import clsx from "clsx"
 import {
@@ -201,7 +201,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
                 "opacity-0": !isEditorEmpty,
               })}
             >
-              Writing a review?
+              <Link to="/review/new">Writing a review?</Link>
             </Button>
           </div>
           <EditorContent

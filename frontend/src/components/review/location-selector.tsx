@@ -11,7 +11,7 @@ export default function LocationSelector() {
 
   return (
     <>
-          <LocationAutocomplete location={location} setLocation={setLocation} />
+      <LocationAutocomplete location={location} setLocation={setLocation} />
     </>
   )
 }

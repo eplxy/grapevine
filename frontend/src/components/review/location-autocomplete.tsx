@@ -1,8 +1,9 @@
 import { useLocationAutocomplete } from "@/hooks/queries/location-queries"
 import { useDebounce } from "@/hooks/use-debounce"
 import type { LocationAutocompleteSuggestion } from "@/models/models"
+import clsx from "clsx"
 import { Command as CommandPrimitive } from "cmdk"
-import { useState, type Dispatch, type SetStateAction } from "react"
+import { useRef, useState, type Dispatch, type SetStateAction } from "react"
 import {
   Command,
   CommandEmpty,
@@ -22,8 +23,9 @@ export default function LocationAutocomplete({
   setLocation: Dispatch<SetStateAction<LocationModel | undefined>>
 }) {
   const [input, setInput] = useState<string>("")
-  const [isOpen, setIsOpen] = useState<boolean>(false)
+  const [isInputFocused, setIsInputFocused] = useState<boolean>(false)
   const debouncedInput = useDebounce(input)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const autocompleteQuery = useLocationAutocomplete(debouncedInput)
 
@@ -38,33 +40,56 @@ export default function LocationAutocomplete({
         (suggestion) => placeID == suggestion.place_id
       )
     )
-    setIsOpen(false)
+    setIsInputFocused(false)
+    setInput((prev: string) => suggestion?.name || prev)
     console.log(placeID, suggestion)
+  }
+
+  const handleInputClicked = () => {
+    setIsInputFocused(true)
+    inputRef.current?.focus()
   }
 
   return (
     <div>
       <Command onValueChange={handleLocationSelected} shouldFilter={false}>
-        {/*<CommandInput
-          placeholder="Search for a restaurant, cafe, bar..."
-          value={input}
-          onValueChange={setInput}
-        />*/}
-
-        <div className="flex items-center rounded-xl border border-border bg-accent p-2">
-          {/*<MyCustomIcon />*/}
-          {!!location && <LocationTypeIcon types={location?.types} />}
+        <div
+          className="flex items-center rounded-xl border border-border bg-accent p-2"
+          onClick={handleInputClicked}
+        >
+          {!!location && !isInputFocused && (
+            <div className="flex flex-row gap-4">
+              <div className="flex h-12 min-w-12 items-center justify-center rounded-md border border-border bg-card p-0 sm:h-16 sm:min-w-16">
+                <LocationTypeIcon types={location?.types} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base">{location?.name}</span>
+                <span className="text-sm text-muted-foreground">
+                  {location?.address}
+                </span>
+              </div>
+            </div>
+          )}
           <CommandPrimitive.Input
+            ref={inputRef}
             value={input}
             onValueChange={(value) => {
               setInput(value)
-              setIsOpen(true)
+              setIsInputFocused(true)
             }}
             placeholder="Search for a restaurant, cafe, bar..."
-            className="ml-2 w-full bg-transparent outline-none"
-          />
+            className={clsx("ml-2 w-full bg-transparent outline-none", {
+              "w-0! opacity-0": !!location && !isInputFocused,
+            })}
+            onBlur={() => {
+              setIsInputFocused(false)
+              if (!input) {
+                setLocation(undefined)
+              }
+            }}
+          ></CommandPrimitive.Input>
         </div>
-        {isOpen && (
+        {!!input && isInputFocused && (
           <CommandList>
             {!!debouncedInput && !autocompleteQuery.isLoading && (
               <CommandEmpty>No results found.</CommandEmpty>
@@ -75,6 +100,7 @@ export default function LocationAutocomplete({
             <CommandGroup>
               {autocompleteQuery.data?.map((suggestion) => (
                 <AutocompleteItem
+                  key={suggestion.place_id}
                   item={suggestion}
                   handleSelect={handleLocationSelected}
                 />
@@ -146,6 +172,10 @@ function AutocompleteItem({
       onSelect={handleSelect}
       value={item.place_id}
       key={item.place_id}
+      onMouseDown={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      }}
     >
       {renderContent()}
     </CommandItem>
