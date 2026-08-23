@@ -19,6 +19,7 @@ func SetupRouter(
 	locationHandler *handlers.LocationHandler) *gin.Engine {
 
 	router := gin.Default()
+	router.SetTrustedProxies(nil)
 	router.Use(cors.New(getCorsConfig(env)))
 
 	autocompleteLimiter := middleware.NewIPRateLimiter(3, 5)
