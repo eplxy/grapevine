@@ -5,7 +5,7 @@ import { userKeys } from "@/hooks/queries/query-keys"
 import { api, baseApi, setAccessToken } from "@/lib/api"
 import type { RouterContext } from "@/router"
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router"
-import type { Wretch, WretchError } from "wretch"
+import type { WretchError } from "wretch"
 
 export const AUTH_STALE_TIME_MS = 1000 * 60 * 5
 
@@ -64,7 +64,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     context.queryClient.ensureQueryData({
       ...healthQueryOptions,
       retry: true,
-      // retryDelay: 1000,
     }),
   pendingComponent: () => <LoadingScreen />,
   component: RootComponent,
