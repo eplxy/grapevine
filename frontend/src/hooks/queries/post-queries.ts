@@ -5,6 +5,7 @@ import { postKeys } from "./query-keys"
 
 import type { JSONContent } from "@tiptap/react"
 import { toast } from "react-toastify"
+import type { LocationAutocompleteSuggestion } from "@/models/models"
 
 export const useFeedQuery = (limit: number, offset: number) => {
   return useQuery({
@@ -35,6 +36,58 @@ export const useUploadNoteMutation = () => {
     mutationKey: postKeys.uploadNote(),
     mutationFn: (body: PostUploadNoteRequestModel) =>
       api.url("/posts/note").post(body).json<PostUploadNoteResponseModel>(),
+    onSuccess: (res) => {
+      toast.success(res.message)
+    },
+    onError: (err) => {
+      toast.error(err.message)
+    },
+  })
+}
+
+interface PostUploadReviewRequestModel {
+  content: JSONContent
+  text_content: string
+  rating: number
+  media_urls: string[]
+  location: {
+    google_place_id: string
+    name: string
+    address: string
+    type: string
+    lat: number
+    lng: number
+  }
+}
+
+interface PostUploadReviewResponseModel {
+  post_id: number
+  message: string
+}
+
+export const useUploadReviewMutation = () => {
+  return useMutation({
+    mutationKey: postKeys.uploadReview(),
+    mutationFn: ({
+      location,
+      ...body
+    }: Omit<PostUploadReviewRequestModel, "location"> & {
+      location: LocationAutocompleteSuggestion
+    }) =>
+      api
+        .url("/posts/review")
+        .post({
+          ...body,
+          location: {
+            google_place_id: location.place_id,
+            name: location.name,
+            address: location.address,
+            type: location.types?.[0] || "",
+            lat: location.lat || 0,
+            lng: location.lng || 0,
+          },
+        })
+        .json<PostUploadReviewResponseModel>(),
     onSuccess: (res) => {
       toast.success(res.message)
     },

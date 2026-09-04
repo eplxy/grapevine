@@ -715,8 +715,6 @@ const docTemplate = `{
             "required": [
                 "address",
                 "google_place_id",
-                "lat",
-                "lng",
                 "name"
             ],
             "properties": {
@@ -732,10 +730,10 @@ const docTemplate = `{
                 "lng": {
                     "type": "number"
                 },
-                "location_type": {
+                "name": {
                     "type": "string"
                 },
-                "name": {
+                "type": {
                     "type": "string"
                 }
             }

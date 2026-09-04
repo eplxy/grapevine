@@ -69,15 +69,13 @@ definitions:
         type: number
       lng:
         type: number
-      location_type:
-        type: string
       name:
+        type: string
+      type:
         type: string
     required:
     - address
     - google_place_id
-    - lat
-    - lng
     - name
     type: object
   handlers.UploadURLResponse:

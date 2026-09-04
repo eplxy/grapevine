@@ -46,10 +46,11 @@ func main() {
 
 	placesClient, err := places.NewClient(ctx, option.WithAPIKey(os.Getenv("MAPS_API_KEY")))
 	checkErr(err)
+	defer placesClient.Close()
 
 	userRepo := database.NewUserRepository(dbpool)
 	postRepo := database.NewPostRepository(dbpool)
-	locationRepo := database.NewLocationRepository(dbpool)
+	locationRepo := database.NewLocationRepository(dbpool, placesClient)
 	mediaRepo := database.NewMediaRepository(gcsClient, os.Getenv("GCS_BUCKET_NAME"))
 
 	env, err := constants.EnvironmentStringToInt(os.Getenv("APP_ENV"))

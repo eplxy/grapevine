@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"grapevine/internal/database"
@@ -38,9 +39,9 @@ type LocationUpsertInfo struct {
 	GooglePlaceID string  `json:"google_place_id" binding:"required"`
 	Name          string  `json:"name" binding:"required"`
 	Address       string  `json:"address" binding:"required"`
-	LocationType  string  `json:"location_type"`
-	Lat           float64 `json:"lat" binding:"required"`
-	Lng           float64 `json:"lng" binding:"required"`
+	LocationType  string  `json:"type"`
+	Lat           float64 `json:"lat"`
+	Lng           float64 `json:"lng"`
 }
 
 type CreateReviewRequest struct {
@@ -95,18 +96,13 @@ func (h *PostHandler) CreateNoteHandler(c *gin.Context) {
 		return
 	}
 
-	for _, url := range req.MediaURLs {
-		fileName, err := extractObjectNameFromURL(url)
-
-		if err != nil {
-			responses.WriteError(c, http.StatusInternalServerError, "incorrect_url_format", fmt.Sprintf("Failed to read storage object name from media url while moving out of temp: %s", err.Error()))
+	if err := h.finalizeMedia(c.Request.Context(), req.MediaURLs); err != nil {
+		code := "storage_move_failure"
+		if strings.HasPrefix(err.Error(), "invalid media URL:") {
+			code = "incorrect_url_format"
 		}
-
-		err = h.mediaRepo.MoveMediaFromTmpToPosts(c.Request.Context(), fileName)
-		if err != nil {
-			responses.WriteError(c, http.StatusInternalServerError, "storage_move_failure", fmt.Sprintf("Failed to move media out of temporary folder: %s", err.Error()))
-			return
-		}
+		responses.WriteError(c, http.StatusInternalServerError, code, err.Error())
+		return
 	}
 
 	postID, err := h.postRepo.CreateNote(c.Request.Context(), userID, req.Content, trimmedText, req.MediaURLs)
@@ -159,22 +155,18 @@ func (h *PostHandler) CreateReviewHandler(c *gin.Context) {
 		ctx, locInfo.GooglePlaceID, locInfo.Name, locInfo.Address, locInfo.LocationType, locInfo.Lat, locInfo.Lng,
 	)
 	if err != nil {
+		fmt.Println(err.Error())
 		responses.WriteError(c, http.StatusInternalServerError, "location_error", "Failed to process location data")
 		return
 	}
 
-	for _, url := range req.MediaURLs {
-		fileName, err := extractObjectNameFromURL(url)
-
-		if err != nil {
-			responses.WriteError(c, http.StatusInternalServerError, "incorrect_url_format", fmt.Sprintf("Failed to read storage object name from media url while moving out of temp: %s", err.Error()))
+	if err := h.finalizeMedia(ctx, req.MediaURLs); err != nil {
+		code := "storage_move_failure"
+		if strings.HasPrefix(err.Error(), "invalid media URL:") {
+			code = "incorrect_url_format"
 		}
-
-		err = h.mediaRepo.MoveMediaFromTmpToPosts(ctx, fileName)
-		if err != nil {
-			responses.WriteError(c, http.StatusInternalServerError, "storage_move_failure", fmt.Sprintf("Failed to move media out of temporary folder: %s", err.Error()))
-			return
-		}
+		responses.WriteError(c, http.StatusInternalServerError, code, err.Error())
+		return
 	}
 
 	postID, err := h.postRepo.CreateReview(
@@ -182,11 +174,25 @@ func (h *PostHandler) CreateReviewHandler(c *gin.Context) {
 	)
 
 	if err != nil {
+		fmt.Println(err.Error())
 		responses.WriteError(c, http.StatusInternalServerError, "creation_failed", "Failed to create review")
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"post_id": postID, "message": "Review created successfully"})
+}
+
+func (h *PostHandler) finalizeMedia(ctx context.Context, mediaURLs []string) error {
+	for _, rawURL := range mediaURLs {
+		fileName, err := extractObjectNameFromURL(rawURL)
+		if err != nil {
+			return fmt.Errorf("invalid media URL: %w", err)
+		}
+		if err := h.mediaRepo.MoveMediaFromTmpToPosts(ctx, fileName); err != nil {
+			return fmt.Errorf("failed to finalize media %q: %w", fileName, err)
+		}
+	}
+	return nil
 }
 
 // GetHomeFeedHandler fetches the chronological feed of both Notes and Reviews.

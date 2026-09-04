@@ -89,7 +89,7 @@ func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID in
 	}
 
 	reviewQuery := `
-		INSERT INTO reviews (post_id, location_id, rating)
+		INSERT INTO reviews (id, location_id, rating)
 		VALUES ($1, $2, $3)`
 
 	_, err = tx.Exec(ctx, reviewQuery, postID, locationID, rating)
@@ -98,9 +98,9 @@ func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID in
 	}
 
 	if len(mediaURLs) > 0 {
-		mediaQuery := `INSERT INTO post_media (post_id, url, type) VALUES ($1, $2, $3)`
-		for _, url := range mediaURLs {
-			_, err = tx.Exec(ctx, mediaQuery, postID, url, "image")
+		mediaQuery := `INSERT INTO post_media (post_id, url, type, display_order) VALUES ($1, $2, $3, $4)`
+		for idx, url := range mediaURLs {
+			_, err = tx.Exec(ctx, mediaQuery, postID, url, "image", idx)
 			if err != nil {
 				return 0, fmt.Errorf("failed to insert media: %w", err)
 			}

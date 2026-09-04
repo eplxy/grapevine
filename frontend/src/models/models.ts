@@ -32,6 +32,8 @@ export interface LocationAutocompleteSuggestion {
   place_id: string
   name: string
   address: string
+  lat?: number
+  lng?: number
   types?: string[]
   matches?: {
     start_offset: number

@@ -23,6 +23,7 @@ export const postKeys = {
   posts: ["posts"] as const,
   getFeed: (limit: number, offset: number) => ["feed", limit, offset],
   uploadNote: () => [...postKeys.posts, "upload", "note"] as const,
+  uploadReview: () => [...postKeys.posts, "upload", "review"] as const,
 }
 
 export const mediaKeys = {

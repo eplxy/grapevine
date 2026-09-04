@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -47,14 +48,27 @@ func (r *MediaRepository) GenerateUploadURL(fileName string, contentType string)
 
 }
 
-// assume already in temp
+// MoveMediaFromTmpToPosts finalizes an upload. It is safe to retry after a
+// previous successful move.
 func (r *MediaRepository) MoveMediaFromTmpToPosts(ctx context.Context, fileName string) error {
 
 	destinationObjectName := fmt.Sprintf("post/%s", fileName)
+	sourceObject := r.client.Bucket(r.bucket).Object(fmt.Sprintf("tmp/%s", fileName))
+	destinationObject := r.client.Bucket(r.bucket).Object(destinationObjectName)
 
-	if _, err := r.client.Bucket(r.bucket).Object(fmt.Sprintf("tmp/%s", fileName)).Move(ctx, storage.MoveObjectDestination{Object: destinationObjectName}); err != nil {
-		return err
+	if _, err := sourceObject.Move(ctx, storage.MoveObjectDestination{Object: destinationObjectName}); err == nil {
+		return nil
+	} else if !errors.Is(err, storage.ErrObjectNotExist) {
+		// A destination may already exist after a successful prior attempt.
+		if _, destinationErr := destinationObject.Attrs(ctx); destinationErr == nil {
+			return nil
+		}
+		return fmt.Errorf("failed to move media %q: %w", fileName, err)
 	}
-	return nil
 
+	if _, err := destinationObject.Attrs(ctx); err != nil {
+		return fmt.Errorf("media %q is not available in temporary or post storage: %w", fileName, err)
+	}
+
+	return nil
 }

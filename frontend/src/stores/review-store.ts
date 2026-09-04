@@ -6,9 +6,11 @@ interface ReviewStore {
   setSelectedLocation: (
     location: LocationAutocompleteSuggestion | undefined
   ) => void
+  reset: () => void
 }
 
 export const useReviewStore = create<ReviewStore>((set) => ({
   selectedLocation: undefined,
   setSelectedLocation: (selectedLocation) => set({ selectedLocation }),
+  reset: () => set({ selectedLocation: undefined }),
 }))
