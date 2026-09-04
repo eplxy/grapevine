@@ -93,7 +93,7 @@ export const useUploadReviewMutation = () => {
         .json<PostUploadReviewResponseModel>(),
     onSuccess: (res) => {
       toast.success(res.message)
-      navigate(`/posts/${res.post_id}`)
+      navigate({ to: `/` })
     },
     onError: (err) => {
       toast.error(err.message)
