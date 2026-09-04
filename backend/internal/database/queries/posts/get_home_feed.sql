@@ -10,6 +10,7 @@ SELECT
 	r.rating,
 	r.location_id,
 	l.name AS location_name,
+	l.address AS location_address,
 	COALESCE(
 		(SELECT json_agg(json_build_object('url', pm.url, 'type', pm.type, 'display_order', pm.display_order))
 		 FROM post_media pm

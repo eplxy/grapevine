@@ -2,6 +2,7 @@ import { api } from "@/lib/api"
 import type { FeedItemModel } from "@/models/models"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { postKeys } from "./query-keys"
+import { useNavigate } from "@tanstack/react-router"
 
 import type { JSONContent } from "@tiptap/react"
 import { toast } from "react-toastify"
@@ -66,6 +67,8 @@ interface PostUploadReviewResponseModel {
 }
 
 export const useUploadReviewMutation = () => {
+  const navigate = useNavigate()
+
   return useMutation({
     mutationKey: postKeys.uploadReview(),
     mutationFn: ({
@@ -90,6 +93,7 @@ export const useUploadReviewMutation = () => {
         .json<PostUploadReviewResponseModel>(),
     onSuccess: (res) => {
       toast.success(res.message)
+      navigate(`/posts/${res.post_id}`)
     },
     onError: (err) => {
       toast.error(err.message)

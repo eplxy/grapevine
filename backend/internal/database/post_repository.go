@@ -139,6 +139,7 @@ func (r *PostRepository) GetHomeFeed(ctx context.Context, limit, offset int) ([]
 			&item.Rating,
 			&item.LocationID,
 			&item.LocationName,
+			&item.LocationAddress,
 			&mediaJSON,
 		)
 		if err != nil {
@@ -174,6 +175,7 @@ func (r *PostRepository) GetPostByID(ctx context.Context, postID int) (*models.F
 		&item.Rating,
 		&item.LocationID,
 		&item.LocationName,
+		&item.LocationAddress,
 		&mediaJSON,
 	)
 

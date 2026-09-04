@@ -1,4 +1,4 @@
-import type { FeedItemModel, MediaItem } from "@/models/models"
+import { PostType, type FeedItemModel, type MediaItem } from "@/models/models"
 import { VIEWER_CLASSES } from "@/styles/styles"
 import { generateHTML } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
@@ -14,6 +14,8 @@ import {
 } from "../ui/carousel"
 import UserAvatar from "../user-avatar"
 import PostCarouselImage from "./post-carousel-image"
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
+import StarRating from "../review/star-rating"
 
 type PostProps = {
   feedItem: FeedItemModel
@@ -56,17 +58,30 @@ export default function Post(props: PostProps) {
 
   return (
     <Card className="border-b border-none pb-4 shadow-none">
-      <CardHeader className="flex flex-row items-center gap-4">
-        <UserAvatar username={props.feedItem.author_name} />
-        <div className="flex flex-col">
-          <span className="text-sm font-semibold">{feedItem.author_name}</span>
-          <span
-            className="text-xs text-muted-foreground"
-            title={dayjs(feedItem.created_at).format("MMMM D, YYYY, hh:mm")}
-          >
-            {dayjs(feedItem.created_at).fromNow()}
-          </span>
+      <CardHeader className="flex flex-row justify-between">
+        <div className="flex flex-row items-center gap-4">
+          <UserAvatar username={props.feedItem.author_name} />
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold">
+              {feedItem.author_name}
+            </span>
+            <span
+              className="text-xs text-muted-foreground"
+              title={dayjs(feedItem.created_at).format("MMMM D, YYYY, hh:mm")}
+            >
+              {dayjs(feedItem.created_at).fromNow()}
+            </span>
+          </div>
         </div>
+        {feedItem.post_type === PostType.Review && (
+          <div className="flex flex-col items-end">
+            <Tooltip>
+              <TooltipTrigger>{feedItem.location_name}</TooltipTrigger>
+              <TooltipContent>{feedItem.location_address}</TooltipContent>
+            </Tooltip>
+            {feedItem.rating && <StarRating rating={feedItem.rating} displayOnly size="sm" />}
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         {!!feedItem.content && (
@@ -82,7 +97,7 @@ export default function Post(props: PostProps) {
             {hasMoreContent && (
               <button
                 type="button"
-                className="mt-2 text-sm text-muted-foreground hover:underline hover:text-lime-200 cursor-pointer"
+                className="mt-2 cursor-pointer text-sm text-muted-foreground hover:text-lime-200 hover:underline"
                 onClick={() => setIsExpanded((expanded) => !expanded)}
                 aria-expanded={isExpanded}
               >

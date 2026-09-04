@@ -11,6 +11,7 @@ export interface FeedItemModel {
   rating?: number
   location_id?: number
   location_name?: string
+  location_address?: string
 
   media?: MediaItem[]
 }

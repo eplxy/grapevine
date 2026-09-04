@@ -16,9 +16,10 @@ type FeedItem struct {
 	AuthorID   int    `json:"author_id"`
 	AuthorName string `json:"author_name"`
 
-	Rating       *int    `json:"rating,omitempty"`
-	LocationID   *int    `json:"location_id,omitempty"`
-	LocationName *string `json:"location_name,omitempty"`
+	Rating          *int    `json:"rating,omitempty"`
+	LocationID      *int    `json:"location_id,omitempty"`
+	LocationName    *string `json:"location_name,omitempty"`
+	LocationAddress *string `json:"location_address,omitempty"`
 
 	Media []MediaItem `json:"media"`
 }
