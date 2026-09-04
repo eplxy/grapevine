@@ -6,19 +6,21 @@ export type StarRatingProps = {
   rating: number
   onRatingChange: (rating: number) => void
   disabled?: boolean
+  hideLabel?: boolean
 }
 
 export default function StarRating({
   rating,
   onRatingChange,
   disabled,
+  hideLabel,
 }: StarRatingProps) {
   const [previewRating, setPreviewRating] = useState<number | null>(null)
   const displayedRating = disabled ? rating : (previewRating ?? rating)
 
   return (
     <div
-      className={clsx("flex flex-row", { "opacity-50": disabled })}
+      className={clsx("flex flex-row items-center", { "opacity-50": disabled })}
       role="group"
       aria-label="Rating"
       aria-disabled={disabled}
@@ -67,6 +69,7 @@ export default function StarRating({
           </span>
         )
       })}
+      {!hideLabel && <span className="ml-2">{displayedRating}</span>}
     </div>
   )
 }

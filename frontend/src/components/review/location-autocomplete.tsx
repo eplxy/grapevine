@@ -3,7 +3,7 @@ import { useDebounce } from "@/hooks/use-debounce"
 import type { LocationAutocompleteSuggestion } from "@/models/models"
 import clsx from "clsx"
 import { Command as CommandPrimitive } from "cmdk"
-import { useRef, useState, type Dispatch, type SetStateAction } from "react"
+import { useRef, useState } from "react"
 import {
   Command,
   CommandEmpty,
@@ -12,15 +12,14 @@ import {
   CommandList,
 } from "../ui/command"
 import { Spinner } from "../ui/spinner"
-import type { LocationModel } from "./location-selector"
 import LocationTypeIcon from "./location-type-icon"
 
 export default function LocationAutocomplete({
   location,
   setLocation,
 }: {
-  location: LocationModel | undefined
-  setLocation: Dispatch<SetStateAction<LocationModel | undefined>>
+  location: LocationAutocompleteSuggestion | undefined
+  setLocation: (location: LocationAutocompleteSuggestion | undefined) => void
 }) {
   const [input, setInput] = useState<string>("")
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false)

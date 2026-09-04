@@ -1,13 +1,9 @@
-import type { LocationAutocompleteSuggestion } from "@/models/models"
-import { useState } from "react"
 import LocationAutocomplete from "./location-autocomplete"
-
-export type LocationSelectorProps = {}
-
-export type LocationModel = {} & LocationAutocompleteSuggestion
+import { useReviewStore } from "@/stores/review-store"
 
 export default function LocationSelector() {
-  const [location, setLocation] = useState<LocationModel>()
+  const location = useReviewStore((state) => state.selectedLocation)
+  const setLocation = useReviewStore((state) => state.setSelectedLocation)
 
   return (
     <>
