@@ -6,5 +6,5 @@ type Review struct {
 	ID         int
 	CreatedAt  time.Time
 	LocationId int
-	Rating     int
+	Rating     float64
 }

@@ -1,4 +1,5 @@
 import LocationSelector from "@/components/review/location-selector"
+import ReviewForm from "@/components/review/review-form"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { ChevronLeft } from "lucide-react"
 
@@ -20,7 +21,9 @@ function RouteComponent() {
         <div className="rounded-xl bg-card p-4">
           <LocationSelector />
         </div>
-        <div className="rounded-xl bg-card p-4">world</div>
+        <div className="rounded-xl bg-card p-4">
+          <ReviewForm />
+        </div>
       </div>
     </div>
   )

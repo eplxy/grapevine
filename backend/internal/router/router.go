@@ -57,7 +57,7 @@ func getCorsConfig(env constants.Environment) cors.Config {
 	corsConfig := cors.DefaultConfig()
 
 	if env == constants.Production {
-		corsConfig.AllowOrigins = []string{"https://grapevine-xi.vercel.app"}
+		corsConfig.AllowOrigins = []string{"https://grapevine-xi.vercel.app", "https://grapevine.food"}
 	} else {
 		corsConfig.AllowOrigins = []string{"http://localhost:5173"}
 	}

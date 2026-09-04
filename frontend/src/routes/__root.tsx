@@ -68,8 +68,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   pendingComponent: () => <LoadingScreen />,
   component: RootComponent,
   errorComponent: ({ error }) => (
-    <div className="flex min-h-svh items-center justify-center">
-      <p>Failed to connect to the server.</p>
+    <div className="flex min-h-svh flex-col items-center justify-center">
+      <p>An error has occurred.</p>
       <p className="text-red-400">{error.message}</p>
     </div>
   ),

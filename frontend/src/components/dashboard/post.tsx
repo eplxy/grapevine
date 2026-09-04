@@ -4,7 +4,7 @@ import { generateHTML } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader } from "../ui/card"
 import {
   Carousel,
@@ -26,6 +26,10 @@ export default function Post(props: PostProps) {
   // const likeCount = 0
   // const replyCount = 0
 
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [hasMoreContent, setHasMoreContent] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+
   const html = useMemo(() => {
     try {
       if (!props.feedItem.content) return ""
@@ -36,6 +40,19 @@ export default function Post(props: PostProps) {
       return `<p class='text-destructive'>Error loading content</p>`
     }
   }, [props.feedItem.content])
+
+  useEffect(() => {
+    const element = contentRef.current
+    if (!element) return
+
+    // Temporarily measure the collapsed content.
+    const wasExpanded = isExpanded
+    if (wasExpanded) element.classList.add("line-clamp-5")
+
+    setHasMoreContent(element.scrollHeight > element.clientHeight + 1)
+
+    if (wasExpanded) element.classList.remove("line-clamp-5")
+  }, [html, isExpanded])
 
   return (
     <Card className="border-b border-none pb-4 shadow-none">
@@ -53,11 +70,28 @@ export default function Post(props: PostProps) {
       </CardHeader>
       <CardContent>
         {!!feedItem.content && (
-          <div
-            className={VIEWER_CLASSES}
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
+          <>
+            <div
+              ref={contentRef}
+              className={`${VIEWER_CLASSES} ${
+                !isExpanded ? "line-clamp-4 overflow-hidden" : ""
+              }`}
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+
+            {hasMoreContent && (
+              <button
+                type="button"
+                className="mt-2 text-sm text-muted-foreground hover:underline hover:text-lime-200 cursor-pointer"
+                onClick={() => setIsExpanded((expanded) => !expanded)}
+                aria-expanded={isExpanded}
+              >
+                {isExpanded ? "Show less" : "Show more"}
+              </button>
+            )}
+          </>
         )}
+
         {feedItem.media && feedItem.media.length > 0 && (
           <MediaCarousel items={feedItem.media} />
         )}
