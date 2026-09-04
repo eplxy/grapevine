@@ -1,6 +1,7 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import UnderConstruction from "@/components/app-navigation/under-contstruction"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 
-export const Route = createFileRoute('/profile')({
+export const Route = createFileRoute("/profile")({
   component: RouteComponent,
   beforeLoad: ({ context }) => {
     if (!context.auth.isAuthenticated) {
@@ -13,5 +14,5 @@ export const Route = createFileRoute('/profile')({
 })
 
 function RouteComponent() {
-  return <div>Hello "/profile"!</div>
+  return <UnderConstruction />
 }
