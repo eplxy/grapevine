@@ -297,6 +297,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/location/details": {
+            "post": {
+                "description": "Get coordinates and display data for a Google Place ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "location"
+                ],
+                "summary": "Get place details",
+                "parameters": [
+                    {
+                        "description": "Google Place ID",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LocationDetailsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LocationDetailsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid JSON or missing required fields",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Google Places API failure",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/media/upload-url": {
             "get": {
                 "security": [
@@ -710,6 +756,43 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.LocationDetailsRequest": {
+            "type": "object",
+            "required": [
+                "place_id"
+            ],
+            "properties": {
+                "place_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.LocationDetailsResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "lat": {
+                    "type": "number"
+                },
+                "lng": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "place_id": {
+                    "type": "string"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "handlers.LocationUpsertInfo": {
             "type": "object",
             "required": [
@@ -819,6 +902,9 @@ const docTemplate = `{
                     "type": "object"
                 },
                 "created_at": {
+                    "type": "string"
+                },
+                "location_address": {
                     "type": "string"
                 },
                 "location_id": {

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"grapevine/internal/constants"
 	"grapevine/internal/database"
 	"grapevine/internal/models"
@@ -12,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"google.golang.org/genproto/googleapis/geo/type/viewport"
 	"google.golang.org/genproto/googleapis/type/latlng"
+	"google.golang.org/grpc/metadata"
 )
 
 type LocationHandler struct {
@@ -26,6 +28,19 @@ type LocationAutocompleteRequest struct {
 
 type LocationAutocompleteResponse struct {
 	Suggestions []models.AutocompleteSuggestion `json:"suggestions"`
+}
+
+type LocationDetailsRequest struct {
+	PlaceID string `json:"place_id" binding:"required"`
+}
+
+type LocationDetailsResponse struct {
+	PlaceID string   `json:"place_id"`
+	Name    string   `json:"name"`
+	Address string   `json:"address"`
+	Types   []string `json:"types"`
+	Lat     float64  `json:"lat"`
+	Lng     float64  `json:"lng"`
 }
 
 type AutocompleteLocationBiasRectangleDTO struct {
@@ -91,16 +106,64 @@ func (h *LocationHandler) LocationAutocompleteHandler(c *gin.Context) {
 
 	if err != nil {
 		responses.WriteInternalError(c, "places_api_error", err.Error())
+		return
 	}
 
 	resp, err := mapPlacesResponseToAPI(autocompleteResp)
 
 	if err != nil {
 		responses.WriteInternalError(c, "mapping_error", err.Error())
+		return
 	}
 
 	c.JSON(http.StatusOK, resp)
 
+}
+
+// LocationDetailsHandler gets the coordinates and display data for a selected place.
+//
+// @Summary      Get place details
+// @Description  Get coordinates and display data for a Google Place ID.
+// @Tags         location
+// @Accept       json
+// @Produce      json
+// @Param        request body LocationDetailsRequest true "Google Place ID"
+// @Success      200  {object} LocationDetailsResponse
+// @Failure      400  {object} object "Bad Request - Invalid JSON or missing required fields"
+// @Failure      500  {object} object "Internal Server Error - Google Places API failure"
+// @Router		 /location/details [post]
+func (h *LocationHandler) LocationDetailsHandler(c *gin.Context) {
+	var req LocationDetailsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		responses.WriteBadRequest(c, "invalid_request", err.Error())
+		return
+	}
+
+	ctx := metadata.AppendToOutgoingContext(
+		c.Request.Context(),
+		"x-goog-fieldmask",
+		"id,displayName,formattedAddress,types,location",
+	)
+	place, err := h.PlacesClient.GetPlace(ctx, &placespb.GetPlaceRequest{
+		Name: fmt.Sprintf("places/%s", req.PlaceID),
+	})
+	if err != nil {
+		responses.WriteInternalError(c, "places_api_error", err.Error())
+		return
+	}
+	if place.GetLocation() == nil {
+		responses.WriteInternalError(c, "missing_coordinates", "place has no coordinates")
+		return
+	}
+
+	c.JSON(http.StatusOK, LocationDetailsResponse{
+		PlaceID: place.GetId(),
+		Name:    place.GetDisplayName().GetText(),
+		Address: place.GetFormattedAddress(),
+		Types:   place.GetTypes(),
+		Lat:     place.GetLocation().GetLatitude(),
+		Lng:     place.GetLocation().GetLongitude(),
+	})
 }
 
 func mapPlacesResponseToAPI(placesRes *placespb.AutocompletePlacesResponse) (LocationAutocompleteResponse, error) {

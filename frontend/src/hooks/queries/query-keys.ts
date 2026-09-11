@@ -44,4 +44,5 @@ export const locationKeys = {
     "autocomplete",
     query,
   ],
+  details: (placeID: string) => [...locationKeys.location, "details", placeID],
 }

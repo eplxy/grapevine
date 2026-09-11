@@ -59,6 +59,30 @@ definitions:
           $ref: '#/definitions/models.AutocompleteSuggestion'
         type: array
     type: object
+  handlers.LocationDetailsRequest:
+    properties:
+      place_id:
+        type: string
+    required:
+    - place_id
+    type: object
+  handlers.LocationDetailsResponse:
+    properties:
+      address:
+        type: string
+      lat:
+        type: number
+      lng:
+        type: number
+      name:
+        type: string
+      place_id:
+        type: string
+      types:
+        items:
+          type: string
+        type: array
+    type: object
   handlers.LocationUpsertInfo:
     properties:
       address:
@@ -133,6 +157,8 @@ definitions:
       content:
         type: object
       created_at:
+        type: string
+      location_address:
         type: string
       location_id:
         type: integer
@@ -359,6 +385,36 @@ paths:
           schema:
             type: object
       summary: Autocomplete places
+      tags:
+      - location
+  /location/details:
+    post:
+      consumes:
+      - application/json
+      description: Get coordinates and display data for a Google Place ID.
+      parameters:
+      - description: Google Place ID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LocationDetailsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.LocationDetailsResponse'
+        "400":
+          description: Bad Request - Invalid JSON or missing required fields
+          schema:
+            type: object
+        "500":
+          description: Internal Server Error - Google Places API failure
+          schema:
+            type: object
+      summary: Get place details
       tags:
       - location
   /media/upload-url:

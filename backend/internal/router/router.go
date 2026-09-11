@@ -46,6 +46,7 @@ func SetupRouter(
 	locationGroup := router.Group("/location")
 
 	locationGroup.POST("/autocomplete", middleware.RateLimitMiddleware(autocompleteLimiter), locationHandler.LocationAutocompleteHandler)
+	locationGroup.POST("/details", middleware.RateLimitMiddleware(autocompleteLimiter), locationHandler.LocationDetailsHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

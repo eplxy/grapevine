@@ -41,3 +41,12 @@ export interface LocationAutocompleteSuggestion {
     end_offset: number
   }[]
 }
+
+export interface LocationDetails {
+  place_id: string
+  name: string
+  address: string
+  lat: number
+  lng: number
+  types?: string[]
+}
