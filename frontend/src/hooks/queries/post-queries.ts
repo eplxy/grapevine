@@ -1,6 +1,6 @@
 import { api } from "@/lib/api"
 import type { FeedItemModel } from "@/models/models"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { postKeys } from "./query-keys"
 import { useNavigate } from "@tanstack/react-router"
 
@@ -94,6 +94,26 @@ export const useUploadReviewMutation = () => {
     onSuccess: (res) => {
       toast.success(res.message)
       navigate({ to: `/` })
+    },
+    onError: (err) => {
+      toast.error(err.message)
+    },
+  })
+}
+
+export const useDeletePostMutation = (postId: number) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationKey: postKeys.deletePost(postId),
+    mutationFn: () =>
+      api
+        .url(`/posts/${postId}`)
+        .delete()
+        .json<PostUploadReviewResponseModel>(),
+    onSuccess: (res) => {
+      toast.success(res.message)
+      queryClient.invalidateQueries({ queryKey: ["feed"] })
     },
     onError: (err) => {
       toast.error(err.message)

@@ -252,6 +252,54 @@ func (h *PostHandler) GetPostByIDHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": post})
 }
 
+// DeletePostHandler deletes a post owned by the authenticated user.
+// @Summary      Delete Post
+// @Description  Deletes a note or review and its associated media.
+// @Tags         posts
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path int true "Post ID"
+// @Success      200 {object} map[string]string
+// @Failure      400,401,404,500 {object} map[string]string
+// @Router       /posts/{id} [delete]
+func (h *PostHandler) DeletePostHandler(c *gin.Context) {
+	userID, err := GetUserIDAsInt(c)
+	if err != nil {
+		responses.WriteError(c, http.StatusUnauthorized, "unauthorized", err.Error())
+		return
+	}
+
+	postID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		responses.WriteBadRequest(c, "invalid_id", "Post ID must be a number")
+		return
+	}
+
+	mediaURLs, err := h.postRepo.DeletePost(c.Request.Context(), postID, userID)
+	if err != nil {
+		if err.Error() == "post not found" {
+			responses.WriteError(c, http.StatusNotFound, "not_found", "Post does not exist")
+			return
+		}
+		responses.WriteError(c, http.StatusInternalServerError, "deletion_failed", "Failed to delete post")
+		return
+	}
+
+	for _, mediaURL := range mediaURLs {
+		fileName, err := extractObjectNameFromURL(mediaURL)
+		if err != nil {
+			responses.WriteError(c, http.StatusInternalServerError, "media_cleanup_failed", err.Error())
+			return
+		}
+		if err := h.mediaRepo.DeleteMedia(c.Request.Context(), fileName); err != nil {
+			responses.WriteError(c, http.StatusInternalServerError, "media_cleanup_failed", err.Error())
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Post deleted successfully"})
+}
+
 func extractObjectNameFromURL(rawURL string) (string, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {

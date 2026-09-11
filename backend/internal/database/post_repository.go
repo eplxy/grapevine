@@ -24,8 +24,73 @@ type PostRepository struct {
 type PostDomain interface {
 	CreateNote(ctx context.Context, userID int, content json.RawMessage, textContent string, mediaURLs []string) (int, error)
 	CreateReview(ctx context.Context, userID, locationID int, rating int, content json.RawMessage, text_content string, mediaURLs []string) (int, error)
+	DeletePost(ctx context.Context, postID, userID int) ([]string, error)
 	GetHomeFeed(ctx context.Context, limit, offset int) ([]models.FeedItem, error)
 	GetPostByID(ctx context.Context, postID int) (*models.FeedItem, error)
+}
+
+// DeletePost removes an owned post and its dependent rows in one transaction.
+// It returns the finalized media object names for cloud-storage cleanup.
+func (r *PostRepository) DeletePost(ctx context.Context, postID, userID int) ([]string, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	rows, err := tx.Query(ctx, `
+		SELECT pm.url
+		FROM posts p
+		LEFT JOIN post_media pm ON pm.post_id = p.id
+		WHERE p.id = $1 AND p.user_id = $2
+	`, postID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load post media: %w", err)
+	}
+
+	var mediaURLs []string
+	postFound := false
+	for rows.Next() {
+		var mediaURL *string
+		if err := rows.Scan(&mediaURL); err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("failed to scan post media: %w", err)
+		}
+		postFound = true
+		if mediaURL != nil {
+			mediaURLs = append(mediaURLs, *mediaURL)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return nil, fmt.Errorf("failed to read post media: %w", err)
+	}
+	rows.Close()
+
+	if !postFound {
+		return nil, fmt.Errorf("post not found")
+	}
+
+	if _, err := tx.Exec(ctx, `DELETE FROM post_media WHERE post_id = $1`, postID); err != nil {
+		return nil, fmt.Errorf("failed to delete post media: %w", err)
+	}
+	// DELETE is intentionally unconditional: notes have no matching review row,
+	// and PostgreSQL treats that as a successful zero-row delete.
+	if _, err := tx.Exec(ctx, `DELETE FROM reviews WHERE id = $1`, postID); err != nil {
+		return nil, fmt.Errorf("failed to delete review details: %w", err)
+	}
+	result, err := tx.Exec(ctx, `DELETE FROM posts WHERE id = $1 AND user_id = $2`, postID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete post: %w", err)
+	}
+	if result.RowsAffected() != 1 {
+		return nil, fmt.Errorf("post not found")
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit post deletion: %w", err)
+	}
+	return mediaURLs, nil
 }
 
 func NewPostRepository(db *pgxpool.Pool) *PostRepository {

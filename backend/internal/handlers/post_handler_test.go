@@ -20,6 +20,11 @@ func (s *mediaRepoStub) MoveMediaFromTmpToPosts(_ context.Context, fileName stri
 	return s.err
 }
 
+func (s *mediaRepoStub) DeleteMedia(_ context.Context, fileName string) error {
+	s.moved = append(s.moved, fileName)
+	return s.err
+}
+
 func TestFinalizeMedia(t *testing.T) {
 	repo := &mediaRepoStub{}
 	handler := &PostHandler{mediaRepo: repo}

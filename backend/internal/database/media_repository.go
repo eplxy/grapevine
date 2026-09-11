@@ -17,6 +17,17 @@ type MediaRepository struct {
 type MediaDomain interface {
 	GenerateUploadURL(fileName string, contentType string) (string, string, error)
 	MoveMediaFromTmpToPosts(ctx context.Context, fileName string) error
+	DeleteMedia(ctx context.Context, fileName string) error
+}
+
+// DeleteMedia removes a finalized post object. Missing objects are treated as
+// success so cleanup can be retried safely.
+func (r *MediaRepository) DeleteMedia(ctx context.Context, fileName string) error {
+	err := r.client.Bucket(r.bucket).Object(fmt.Sprintf("post/%s", fileName)).Delete(ctx)
+	if err != nil && !errors.Is(err, storage.ErrObjectNotExist) {
+		return fmt.Errorf("failed to delete media %q: %w", fileName, err)
+	}
+	return nil
 }
 
 func NewMediaRepository(client *storage.Client, bucket string) *MediaRepository {

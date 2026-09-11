@@ -8,11 +8,12 @@ export type StarRatingProps = {
   disabled?: boolean
   hideLabel?: boolean
   displayOnly?: boolean
-  size?: "sm" | "md" | "lg"
+  size?: "xs" |"sm" | "md" | "lg"
   labelPosition?: "left" | "right"
 }
 
-export const starSizeClasses: Record<"sm" | "md" | "lg", string> = {
+export const starSizeClasses: Record<"xs" | "sm" | "md" | "lg", string> = {
+  xs: "h-4 w-4",
   sm: "h-5 w-5",
   md: "h-7 w-7",
   lg: "h-8 w-8",

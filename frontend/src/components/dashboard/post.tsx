@@ -16,6 +16,16 @@ import UserAvatar from "../user-avatar"
 import PostCarouselImage from "./post-carousel-image"
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 import StarRating from "../review/star-rating"
+import { Edit, MoreHorizontal, Trash } from "lucide-react"
+import { Button } from "../ui/button"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../ui/popover"
+import CancelConfirmationAlertDialog from "../dialog/cancel-confirmation"
+import { useDeletePostMutation } from "@/hooks/queries/post-queries"
+import { useAuthSessionQuery } from "@/hooks/queries/auth-queries"
 
 type PostProps = {
   feedItem: FeedItemModel
@@ -73,17 +83,26 @@ export default function Post(props: PostProps) {
             </span>
           </div>
         </div>
-        {feedItem.post_type === PostType.Review && (
-          <div className="flex flex-col items-end">
-            <Tooltip>
-              <TooltipTrigger>{feedItem.location_name}</TooltipTrigger>
-              <TooltipContent>{feedItem.location_address}</TooltipContent>
-            </Tooltip>
-            {feedItem.rating && <StarRating rating={feedItem.rating} displayOnly size="sm" />}
-          </div>
-        )}
+        <div>
+          <MoreOptionsButton post={feedItem}/>
+        </div>
       </CardHeader>
       <CardContent>
+        {feedItem.post_type === PostType.Review && (
+          <div className="flex flex-col items-start pb-2">
+            <Tooltip>
+              <TooltipTrigger>
+                <span className="text-left text-lg font-semibold">
+                  {feedItem.location_name}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{feedItem.location_address}</TooltipContent>
+            </Tooltip>
+            {feedItem.rating && (
+              <StarRating rating={feedItem.rating} displayOnly size="xs" />
+            )}
+          </div>
+        )}
         {!!feedItem.content && (
           <>
             <div
@@ -150,5 +169,42 @@ function MediaCarousel({ items }: { items: MediaItem[] }) {
       </CarouselContent>
       <CarouselNavigation />
     </Carousel>
+  )
+}
+
+
+function MoreOptionsButton({ post }: { post: FeedItemModel }) {
+  const deletePostMutation = useDeletePostMutation(post.post_id)
+
+  const { data: session } = useAuthSessionQuery()
+
+  if (!session || session.user_id !== post.author_id) return null
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreHorizontal />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="max-w-fit">
+        <div className="flex flex-col gap-2">
+          <Button disabled variant="outline" className="justify-between gap-4">
+            Edit (wip)
+            <Edit />
+          </Button>
+          <CancelConfirmationAlertDialog
+            title="Are you sure you want to delete this post?"
+            triggerComponent={
+              <Button variant="outline" className="justify-between">
+                Delete
+                <Trash />
+              </Button>
+            }
+            onConfirm={deletePostMutation.mutate}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   )
 }

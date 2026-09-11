@@ -38,6 +38,7 @@ func SetupRouter(
 	postGroup.POST("/note", middleware.AuthMiddleware(), postHandler.CreateNoteHandler)
 	postGroup.POST("/review", middleware.AuthMiddleware(), postHandler.CreateReviewHandler)
 	postGroup.GET("/:id", postHandler.GetPostByIDHandler)
+	postGroup.DELETE("/:id", middleware.AuthMiddleware(), postHandler.DeletePostHandler)
 
 	mediaGroup := router.Group("/media")
 
