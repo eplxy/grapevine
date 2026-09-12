@@ -1,6 +1,7 @@
 import LocationSelector from "@/components/review/location-selector"
 import ReviewForm from "@/components/review/review-form"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { Button } from "@/components/ui/button"
+import { createFileRoute, useRouter } from "@tanstack/react-router"
 import { ChevronLeft } from "lucide-react"
 
 export const Route = createFileRoute("/review/new")({
@@ -8,12 +9,18 @@ export const Route = createFileRoute("/review/new")({
 })
 
 function RouteComponent() {
+  const router = useRouter()
+
   return (
     <div className="flex h-dvh w-full flex-col overflow-hidden py-4">
       <nav className="mb-2 flex h-auto flex-row items-center gap-2 border-b px-4 pb-2">
-        <Link to={"/"}>
+        <Button
+          variant="ghost"
+          size={"icon"}
+          onClick={() => router.history.back()}
+        >
           <ChevronLeft />
-        </Link>
+        </Button>
         <span className="text-lg">New review</span>
       </nav>
 

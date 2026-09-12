@@ -8,10 +8,21 @@ import { Bold, Italic, List, Strikethrough } from "lucide-react"
 import { useState } from "react"
 import EditorBubbleMenu from "../editor/bubble-menu"
 import MediaUploader, { type MediaUploaderListItem } from "../media-uploader"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../ui/alert-dialog"
 import { Button } from "../ui/button"
 import { Toggle } from "../ui/toggle"
 import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group"
 import StarRating from "./star-rating"
+import { useBlocker } from "@tanstack/react-router"
 
 const REVIEW_PLACEHOLDER =
   "What did you like, and what should other people know?"
@@ -25,6 +36,18 @@ export default function ReviewForm() {
   const [activeFormats, setActiveFormats] = useState<string[]>([])
   const [isBulletActive, setIsBulletActive] = useState(false)
   const reviewMutation = useUploadReviewMutation()
+
+  const hasMedia = itemList.length > 0
+
+  const hasUnsavedChanges =
+    (!reviewMutation.isPending || !reviewMutation.isSuccess) &&
+    (!isEditorEmpty || !!selectedLocation || hasMedia)
+
+  const blocker = useBlocker({
+    shouldBlockFn: () => hasUnsavedChanges,
+    enableBeforeUnload: () => hasUnsavedChanges,
+    withResolver: true,
+  })
 
   const editor = useEditor({
     extensions: [
@@ -63,7 +86,6 @@ export default function ReviewForm() {
     autofocus: false,
   })
 
-  const hasMedia = itemList.length > 0
   const mediaReady = itemList.every((item) => !!item.publicURL)
   const canSubmit =
     !!selectedLocation &&
@@ -102,81 +124,108 @@ export default function ReviewForm() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <StarRating
-        rating={rating}
-        onRatingChange={setRating}
-        disabled={!selectedLocation}
-      />
+    <>
+      <div className="flex flex-col gap-4">
+        <StarRating
+          rating={rating}
+          onRatingChange={setRating}
+          disabled={!selectedLocation}
+        />
 
-      <div className="rounded-xl border border-border p-3">
-        <EditorContent editor={editor} />
-        {editor && (
-          <EditorBubbleMenu
-            editor={editor}
-            activeFormats={activeFormats}
-            isBulletActive={isBulletActive}
-          />
-        )}
+        <div className="rounded-xl border border-border p-3">
+          <EditorContent editor={editor} />
+          {editor && (
+            <EditorBubbleMenu
+              editor={editor}
+              activeFormats={activeFormats}
+              isBulletActive={isBulletActive}
+            />
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <ToggleGroup
+              variant="outline"
+              type="multiple"
+              value={activeFormats}
+              className="gap-0"
+              size="sm"
+            >
+              <ToggleGroupItem
+                value="bold"
+                className="rounded-r-none"
+                onClick={() => editor?.chain().focus().toggleBold().run()}
+              >
+                <Bold />
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="italic"
+                className="rounded-none"
+                onClick={() => editor?.chain().focus().toggleItalic().run()}
+              >
+                <Italic />
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="strikethrough"
+                className="rounded-l-none"
+                onClick={() => editor?.chain().focus().toggleStrike().run()}
+              >
+                <Strikethrough />
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Toggle
+              variant="outline"
+              pressed={isBulletActive}
+              onPressedChange={() =>
+                editor?.chain().focus().toggleBulletList().run()
+              }
+              size="sm"
+            >
+              <List />
+            </Toggle>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={handleCancel}
+              disabled={!isEditorEmpty || rating > 0 || hasMedia}
+            >
+              Clear
+            </Button>
+            <Button onClick={handleSubmit} disabled={!canSubmit}>
+              {reviewMutation.isPending ? "Posting..." : "Post review"}
+            </Button>
+          </div>
+        </div>
+
+        <MediaUploader itemList={itemList} setItemList={setItemList} />
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <ToggleGroup
-            variant="outline"
-            type="multiple"
-            value={activeFormats}
-            className="gap-0"
-            size="sm"
-          >
-            <ToggleGroupItem
-              value="bold"
-              className="rounded-r-none"
-              onClick={() => editor?.chain().focus().toggleBold().run()}
-            >
-              <Bold />
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="italic"
-              className="rounded-none"
-              onClick={() => editor?.chain().focus().toggleItalic().run()}
-            >
-              <Italic />
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="strikethrough"
-              className="rounded-l-none"
-              onClick={() => editor?.chain().focus().toggleStrike().run()}
-            >
-              <Strikethrough />
-            </ToggleGroupItem>
-          </ToggleGroup>
-          <Toggle
-            variant="outline"
-            pressed={isBulletActive}
-            onPressedChange={() =>
-              editor?.chain().focus().toggleBulletList().run()
-            }
-            size="sm"
-          >
-            <List />
-          </Toggle>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={handleCancel}
-            disabled={!isEditorEmpty || rating > 0 || hasMedia}
-          >
-            Clear
-          </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit}>
-            {reviewMutation.isPending ? "Posting..." : "Post review"}
-          </Button>
-        </div>
-      </div>
-
-      <MediaUploader itemList={itemList} setItemList={setItemList} />
-    </div>
+      <AlertDialog
+        open={blocker.status === "blocked"}
+        onOpenChange={(open) => {
+          if (!open) blocker.reset?.()
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard your review?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. If you leave this page, your review will
+              be discarded.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => blocker.reset?.()}>
+              Stay on page
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => blocker.proceed?.()}>
+              Leave page
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
