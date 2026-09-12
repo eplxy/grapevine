@@ -19,7 +19,8 @@ import {
   closestCenter,
   DndContext,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -49,9 +50,11 @@ export interface MediaUploaderListItem {
 export default function MediaUploader(props: MediaUploaderProps) {
   const { itemList, setItemList } = props
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor),
+    useSensor(TouchSensor, {
       activationConstraint: {
-        distance: 5,
+        delay: 300,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -169,7 +172,7 @@ function SortableMediaPreview(props: {
       style={style}
       {...attributes}
       {...listeners}
-      className="cursor-grab touch-none active:cursor-grabbing"
+      className="cursor-grab touch-pan-x active:cursor-grabbing"
     >
       <MediaPreview
         file={props.file}

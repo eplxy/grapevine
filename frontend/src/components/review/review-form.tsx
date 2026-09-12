@@ -186,13 +186,6 @@ export default function ReviewForm() {
             </Toggle>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              onClick={handleCancel}
-              disabled={!isEditorEmpty || rating > 0 || hasMedia}
-            >
-              Clear
-            </Button>
             <Button onClick={handleSubmit} disabled={!canSubmit}>
               {reviewMutation.isPending ? "Posting..." : "Post review"}
             </Button>
