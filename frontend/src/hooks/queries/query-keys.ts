@@ -21,7 +21,8 @@ export const userKeys = {
 
 export const postKeys = {
   posts: ["posts"] as const,
-  getFeed: (limit: number, offset: number) => ["feed", limit, offset],
+  feed: ["feed"] as const,
+  getFeed: () => postKeys.feed,
   uploadNote: () => [...postKeys.posts, "upload", "note"] as const,
   uploadReview: () => [...postKeys.posts, "upload", "review"] as const,
   deletePost: (postId: number) => [...postKeys.posts, "delete", postId] as const,

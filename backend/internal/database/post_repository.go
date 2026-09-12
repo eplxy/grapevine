@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"grapevine/internal/models"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,11 +22,21 @@ type PostRepository struct {
 	db *pgxpool.Pool
 }
 
+type FeedCursor struct {
+	CreatedAt time.Time
+	PostID    int
+}
+
+type FeedPage struct {
+	Items   []models.FeedItem
+	HasMore bool
+}
+
 type PostDomain interface {
 	CreateNote(ctx context.Context, userID int, content json.RawMessage, textContent string, mediaURLs []string) (int, error)
 	CreateReview(ctx context.Context, userID, locationID int, rating int, content json.RawMessage, text_content string, mediaURLs []string) (int, error)
 	DeletePost(ctx context.Context, postID, userID int) ([]string, error)
-	GetHomeFeed(ctx context.Context, limit, offset int) ([]models.FeedItem, error)
+	GetHomeFeed(ctx context.Context, limit int, cursor *FeedCursor) (FeedPage, error)
 	GetPostByID(ctx context.Context, postID int) (*models.FeedItem, error)
 }
 
@@ -180,14 +191,21 @@ func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID in
 }
 
 // GetHomeFeed joins posts, reviews, locations, and post_media into a single struct
-func (r *PostRepository) GetHomeFeed(ctx context.Context, limit, offset int) ([]models.FeedItem, error) {
-	rows, err := r.db.Query(ctx, getHomeFeedSQL, limit, offset)
+func (r *PostRepository) GetHomeFeed(ctx context.Context, limit int, cursor *FeedCursor) (FeedPage, error) {
+	var cursorCreatedAt *time.Time
+	cursorPostID := 0
+	if cursor != nil {
+		cursorCreatedAt = &cursor.CreatedAt
+		cursorPostID = cursor.PostID
+	}
+
+	rows, err := r.db.Query(ctx, getHomeFeedSQL, limit+1, cursorCreatedAt, cursorPostID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query home feed: %w", err)
+		return FeedPage{}, fmt.Errorf("failed to query home feed: %w", err)
 	}
 	defer rows.Close()
 
-	var feed []models.FeedItem
+	feed := make([]models.FeedItem, 0, limit+1)
 
 	for rows.Next() {
 		var item models.FeedItem
@@ -208,21 +226,26 @@ func (r *PostRepository) GetHomeFeed(ctx context.Context, limit, offset int) ([]
 			&mediaJSON,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan feed row: %w", err)
+			return FeedPage{}, fmt.Errorf("failed to scan feed row: %w", err)
 		}
 
 		if err := json.Unmarshal(mediaJSON, &item.Media); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal media json: %w", err)
+			return FeedPage{}, fmt.Errorf("failed to unmarshal media json: %w", err)
 		}
 
 		feed = append(feed, item)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration error: %w", err)
+		return FeedPage{}, fmt.Errorf("rows iteration error: %w", err)
 	}
 
-	return feed, nil
+	hasMore := len(feed) > limit
+	if hasMore {
+		feed = feed[:limit]
+	}
+
+	return FeedPage{Items: feed, HasMore: hasMore}, nil
 }
 
 func (r *PostRepository) GetPostByID(ctx context.Context, postID int) (*models.FeedItem, error) {

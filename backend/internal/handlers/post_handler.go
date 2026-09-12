@@ -2,15 +2,17 @@ package handlers
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"grapevine/internal/database"
-	"grapevine/internal/models"
 	"grapevine/internal/responses"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -51,6 +53,16 @@ type CreateReviewRequest struct {
 	MediaURLs   []string        `json:"media_urls"`
 
 	LocationInfo LocationUpsertInfo `json:"location" binding:"required"`
+}
+
+const (
+	defaultFeedLimit = 10
+	maxFeedLimit     = 50
+)
+
+type feedCursorPayload struct {
+	CreatedAt time.Time `json:"created_at"`
+	PostID    int       `json:"post_id"`
 }
 
 // CreateNoteHandler creates a standalone text/media post.
@@ -200,26 +212,79 @@ func (h *PostHandler) finalizeMedia(ctx context.Context, mediaURLs []string) err
 // @Description  Returns paginated posts for the main feed.
 // @Tags         posts
 // @Produce      json
-// @Param        limit query int false "Pagination limit" default(20)
-// @Param        offset query int false "Pagination offset" default(0)
-// @Success      200 {array} models.FeedItem
+// @Param        limit query int false "Pagination limit" default(10)
+// @Param        cursor query string false "Opaque cursor returned by the previous page"
+// @Success      200 {object} map[string]interface{}
 // @Failure      500 {object} map[string]string
 // @Router       /posts [get]
 func (h *PostHandler) GetHomeFeedHandler(c *gin.Context) {
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	feed, err := h.postRepo.GetHomeFeed(c.Request.Context(), limit, offset)
-	if err != nil {
-		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", "Failed to load feed.")
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", strconv.Itoa(defaultFeedLimit)))
+	if err != nil || limit < 1 || limit > maxFeedLimit {
+		responses.WriteBadRequest(c, "invalid_limit", fmt.Sprintf("limit must be between 1 and %d", maxFeedLimit))
 		return
 	}
 
-	if feed == nil {
-		feed = []models.FeedItem{}
+	cursor, err := decodeFeedCursor(c.Query("cursor"))
+	if err != nil {
+		responses.WriteBadRequest(c, "invalid_cursor", "cursor is invalid")
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": feed})
+	page, err := h.postRepo.GetHomeFeed(c.Request.Context(), limit, cursor)
+	if err != nil {
+		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", fmt.Sprintf("Failed to load feed. %v", err))
+		return
+	}
+
+	nextCursor := ""
+	if page.HasMore && len(page.Items) > 0 {
+		last := page.Items[len(page.Items)-1]
+		nextCursor, err = encodeFeedCursor(database.FeedCursor{
+			CreatedAt: last.CreatedAt,
+			PostID:    last.PostID,
+		})
+		if err != nil {
+			responses.WriteError(c, http.StatusInternalServerError, "cursor_failed", "Failed to create feed cursor.")
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": page.Items,
+		"pagination": gin.H{
+			"has_more":    page.HasMore,
+			"next_cursor": nextCursor,
+		},
+	})
+}
+
+func encodeFeedCursor(cursor database.FeedCursor) (string, error) {
+	payload, err := json.Marshal(feedCursorPayload{CreatedAt: cursor.CreatedAt, PostID: cursor.PostID})
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(payload), nil
+}
+
+func decodeFeedCursor(raw string) (*database.FeedCursor, error) {
+	if raw == "" {
+		return nil, nil
+	}
+
+	payload, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	var decoded feedCursorPayload
+	if err := json.Unmarshal(payload, &decoded); err != nil {
+		return nil, err
+	}
+	if decoded.PostID < 1 || decoded.CreatedAt.IsZero() {
+		return nil, errors.New("cursor fields are invalid")
+	}
+
+	return &database.FeedCursor{CreatedAt: decoded.CreatedAt, PostID: decoded.PostID}, nil
 }
 
 // GetPostByIDHandler fetches a single post (Note or Review) by its ID.

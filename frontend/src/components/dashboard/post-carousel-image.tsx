@@ -16,6 +16,8 @@ export default function PostCarouselImage({
         <Skeleton className="absolute inset-0 h-full w-full rounded-md" />
       )}
       <img
+        loading="lazy"
+        decoding="async"
         className={`h-full w-full rounded-md object-contain transition-opacity duration-300 ${
           isLoading ? "opacity-0" : "opacity-100"
         }`}
