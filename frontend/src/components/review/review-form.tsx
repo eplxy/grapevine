@@ -116,13 +116,6 @@ export default function ReviewForm() {
     )
   }
 
-  const handleCancel = () => {
-    editor?.commands.clearContent()
-    setRating(0)
-    setItemList([])
-    resetReview()
-  }
-
   return (
     <>
       <div className="flex flex-col gap-4">
