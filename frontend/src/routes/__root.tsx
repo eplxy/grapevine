@@ -27,16 +27,12 @@ const initializeAuthSession =
       return await api.url("/auth/me").get().json<GetAuthSessionResponseModel>()
     } catch (error) {
       const we = error as WretchError
-      if (we.status) {
-        const isServerError = we.status >= 500
-
-        const isNetworkError =
-          !we.status &&
-          (we?.name === "WretchError" || we?.message?.includes("fetch"))
-
-        if (isServerError || isNetworkError) {
-          throw error
-        }
+      const isServerError = !!we.status && we.status >= 500
+      const isNetworkError =
+        !we.status &&
+        (we?.name === "WretchError" || we?.message?.includes("fetch"))
+      if (isServerError || isNetworkError) {
+        throw error
       }
       console.error("Initialization failed:", error)
       return { authenticated: false, user_id: "", username: "" }
