@@ -200,6 +200,7 @@ function CreateNoteDialogInnerContent(props: InnerProps) {
               className={clsx("transition-opacity duration-500", {
                 "opacity-0": !isEditorEmpty,
               })}
+              asChild
             >
               <Link to="/review/new">Writing a review?</Link>
             </Button>
