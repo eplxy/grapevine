@@ -476,25 +476,23 @@ paths:
     get:
       description: Returns paginated posts for the main feed.
       parameters:
-      - default: 20
+      - default: 10
         description: Pagination limit
         in: query
         name: limit
         type: integer
-      - default: 0
-        description: Pagination offset
+      - description: Opaque cursor returned by the previous page
         in: query
-        name: offset
-        type: integer
+        name: cursor
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.FeedItem'
-            type: array
+            additionalProperties: true
+            type: object
         "500":
           description: Internal Server Error
           schema:
@@ -505,6 +503,52 @@ paths:
       tags:
       - posts
   /posts/{id}:
+    delete:
+      description: Deletes a note or review and its associated media.
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Post
+      tags:
+      - posts
     get:
       description: Fetches post details including media and location info.
       parameters:
