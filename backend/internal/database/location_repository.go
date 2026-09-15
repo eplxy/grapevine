@@ -23,7 +23,7 @@ type LocationRepository struct {
 }
 
 type LocationDomain interface {
-	UpsertLocation(ctx context.Context, googlePlaceID, name, address, locationType string, lat, lng float64) (int, error)
+	UpsertLocation(ctx context.Context, googlePlaceID, name, address, locationType string, lat, lng *float64) (int, error)
 	GetLocationByID(ctx context.Context, id int) (*models.Location, error)
 }
 
@@ -35,9 +35,9 @@ func NewLocationRepository(db *pgxpool.Pool, placesClient *places.Client) *Locat
 }
 
 // Upsert checks if google_place_id exists. If yes, returns internal ID. If no, inserts and returns ID.
-func (r *LocationRepository) UpsertLocation(ctx context.Context, googlePlaceId, name, address, locationType string, lat, lng float64) (int, error) {
+func (r *LocationRepository) UpsertLocation(ctx context.Context, googlePlaceId, name, address, locationType string, lat, lng *float64) (int, error) {
 
-	if lat == 0 && lng == 0 {
+	if lat == nil || lng == nil {
 		if r.placesClient == nil {
 			return 0, fmt.Errorf("places client is not configured")
 		}
@@ -61,12 +61,14 @@ func (r *LocationRepository) UpsertLocation(ctx context.Context, googlePlaceId, 
 		if place.GetLocation() == nil {
 			return 0, fmt.Errorf("place %q has no location", googlePlaceId)
 		}
-		lat = place.GetLocation().GetLatitude()
-		lng = place.GetLocation().GetLongitude()
+		resolvedLat := place.GetLocation().GetLatitude()
+		resolvedLng := place.GetLocation().GetLongitude()
+		lat = &resolvedLat
+		lng = &resolvedLng
 	}
 
 	var locationID int
-	err := r.db.QueryRow(ctx, upsertLocationsSQL, googlePlaceId, name, address, locationType, lat, lng).Scan(&locationID)
+	err := r.db.QueryRow(ctx, upsertLocationsSQL, googlePlaceId, name, address, locationType, *lat, *lng).Scan(&locationID)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to upset location: %w", err)

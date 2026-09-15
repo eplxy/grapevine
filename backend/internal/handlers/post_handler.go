@@ -38,12 +38,12 @@ type CreateNoteRequest struct {
 }
 
 type LocationUpsertInfo struct {
-	GooglePlaceID string  `json:"google_place_id" binding:"required"`
-	Name          string  `json:"name" binding:"required"`
-	Address       string  `json:"address" binding:"required"`
-	LocationType  string  `json:"type"`
-	Lat           float64 `json:"lat"`
-	Lng           float64 `json:"lng"`
+	GooglePlaceID string   `json:"google_place_id" binding:"required"`
+	Name          string   `json:"name" binding:"required"`
+	Address       string   `json:"address" binding:"required"`
+	LocationType  string   `json:"type"`
+	Lat           *float64 `json:"lat"`
+	Lng           *float64 `json:"lng"`
 }
 
 type CreateReviewRequest struct {
