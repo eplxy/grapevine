@@ -59,11 +59,11 @@ export default function Post(props: PostProps) {
 
     // Temporarily measure the collapsed content.
     const wasExpanded = isExpanded
-    if (wasExpanded) element.classList.add("line-clamp-5")
+    if (wasExpanded) element.classList.add("line-clamp-4")
 
     setHasMoreContent(element.scrollHeight > element.clientHeight + 1)
 
-    if (wasExpanded) element.classList.remove("line-clamp-5")
+    if (wasExpanded) element.classList.remove("line-clamp-4")
   }, [html, isExpanded])
 
   return (
