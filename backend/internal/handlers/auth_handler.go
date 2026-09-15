@@ -82,13 +82,13 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 
 	userID, hashedPassword, err := h.repo.GetUserByName(c.Request.Context(), req.Name)
 	if err != nil {
-		responses.WriteError(c, http.StatusUnauthorized, "invalid_credentials", "Invalid email or password")
+		responses.WriteError(c, http.StatusUnauthorized, "invalid_credentials", "Invalid username or password")
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(req.Password))
 	if err != nil {
-		responses.WriteError(c, http.StatusUnauthorized, "invalid_credentials", "Invalid email or password")
+		responses.WriteError(c, http.StatusUnauthorized, "invalid_credentials", "Invalid username or password")
 		return
 	}
 
@@ -203,10 +203,8 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 }
 
 func (h *AuthHandler) getCookieDomain() string {
-	if h.isProd {
-		return ""
-	}
-	return "localhost"
+	// Leave the cookie host-only so it works for localhost and API subdomains.
+	return ""
 }
 
 func (h *AuthHandler) setRefreshCookie(c *gin.Context, token string, maxAge int) {

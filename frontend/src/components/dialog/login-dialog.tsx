@@ -35,7 +35,7 @@ export default function LoginDialog({
       },
       {
         onSuccess: () => {
-          navigate({ to: "/", reloadDocument: true })
+          navigate({ to: "/" })
         },
       }
     )
