@@ -176,7 +176,7 @@ func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID in
 	if len(mediaURLs) > 0 {
 		mediaQuery := `INSERT INTO post_media (post_id, url, type, display_order) VALUES ($1, $2, $3, $4)`
 		for idx, url := range mediaURLs {
-			_, err = tx.Exec(ctx, mediaQuery, postID, url, "image", idx)
+			_, err = tx.Exec(ctx, mediaQuery, postID, url, "image", idx+1)
 			if err != nil {
 				return 0, fmt.Errorf("failed to insert media: %w", err)
 			}
