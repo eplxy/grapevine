@@ -11,9 +11,11 @@ import (
 	"log"
 	"os"
 
+	places "cloud.google.com/go/maps/places/apiv1"
 	"cloud.google.com/go/storage"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
+	"google.golang.org/api/option"
 )
 
 // @title           grapevine API
@@ -39,24 +41,37 @@ func main() {
 	defer dbpool.Close()
 
 	ctx := context.Background()
+	if err := database.EnsureMediaCleanupOutbox(ctx, dbpool); err != nil {
+		checkErr(err)
+	}
 	gcsClient, err := storage.NewClient(ctx)
+	checkErr(err)
+
+	placesClient, err := places.NewClient(ctx, option.WithAPIKey(os.Getenv("MAPS_API_KEY")))
+	checkErr(err)
+	defer placesClient.Close()
 
 	userRepo := database.NewUserRepository(dbpool)
 	postRepo := database.NewPostRepository(dbpool)
-	locationRepo := database.NewLocationRepository(dbpool)
+	locationRepo := database.NewLocationRepository(dbpool, placesClient)
 	mediaRepo := database.NewMediaRepository(gcsClient, os.Getenv("GCS_BUCKET_NAME"))
+	go database.NewMediaCleanupWorker(dbpool, mediaRepo).Run(ctx)
 
 	env, err := constants.EnvironmentStringToInt(os.Getenv("APP_ENV"))
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "an error occurred: %v\n", err)
-		os.Exit(1)
-	}
+	checkErr(err)
 
 	authHandler := handlers.NewAuthHandler(userRepo, env == constants.Production)
 	postHandler := handlers.NewPostHandler(postRepo, locationRepo, mediaRepo)
 	mediaHandler := handlers.NewMediaHandler(mediaRepo)
+	locationHandler := handlers.NewLocationHandler(locationRepo, placesClient)
 
-	engine := router.SetupRouter(env, authHandler, postHandler, mediaHandler)
+	engine := router.SetupRouter(env, authHandler, postHandler, mediaHandler, locationHandler)
 	engine.Run()
+}
+
+func checkErr(err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "an error occurred: %v\n", err)
+		os.Exit(1)
+	}
 }

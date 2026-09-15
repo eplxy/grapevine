@@ -16,7 +16,7 @@ import { Dialog } from "../ui/dialog"
 type CancelConfirmationAlertDialogProps = {
   title?: string
   triggerComponent: JSX.Element
-  bypassAlert?: boolean
+  bypassAlert?: boolean // if true, the dialog is ignored, and the trigger component runs its own handler
   onConfirm: () => void
 } & ComponentProps<typeof Dialog>
 

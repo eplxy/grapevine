@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"grapevine/internal/models"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,11 +22,95 @@ type PostRepository struct {
 	db *pgxpool.Pool
 }
 
+type FeedCursor struct {
+	CreatedAt time.Time
+	PostID    int
+}
+
+type FeedPage struct {
+	Items   []models.FeedItem
+	HasMore bool
+}
+
 type PostDomain interface {
 	CreateNote(ctx context.Context, userID int, content json.RawMessage, textContent string, mediaURLs []string) (int, error)
-	CreateReview(ctx context.Context, userID, locationID int, rating int, content json.RawMessage, text_content string, mediaURLs []string) (int, error)
-	GetHomeFeed(ctx context.Context, limit, offset int) ([]models.FeedItem, error)
+	CreateReview(ctx context.Context, userID, locationID int, rating float64, content json.RawMessage, text_content string, mediaURLs []string) (int, error)
+	DeletePost(ctx context.Context, postID, userID int) ([]string, error)
+	GetHomeFeed(ctx context.Context, limit int, cursor *FeedCursor) (FeedPage, error)
 	GetPostByID(ctx context.Context, postID int) (*models.FeedItem, error)
+}
+
+// DeletePost removes an owned post and its dependent rows in one transaction.
+// Media cleanup is queued in the same transaction before the post is committed.
+func (r *PostRepository) DeletePost(ctx context.Context, postID, userID int) ([]string, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	rows, err := tx.Query(ctx, `
+		SELECT pm.url
+		FROM posts p
+		LEFT JOIN post_media pm ON pm.post_id = p.id
+		WHERE p.id = $1 AND p.user_id = $2
+	`, postID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load post media: %w", err)
+	}
+
+	var mediaURLs []string
+	postFound := false
+	for rows.Next() {
+		var mediaURL *string
+		if err := rows.Scan(&mediaURL); err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("failed to scan post media: %w", err)
+		}
+		postFound = true
+		if mediaURL != nil {
+			mediaURLs = append(mediaURLs, *mediaURL)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return nil, fmt.Errorf("failed to read post media: %w", err)
+	}
+	rows.Close()
+
+	if !postFound {
+		return nil, fmt.Errorf("post not found")
+	}
+
+	if _, err := tx.Exec(ctx, `DELETE FROM post_media WHERE post_id = $1`, postID); err != nil {
+		return nil, fmt.Errorf("failed to delete post media: %w", err)
+	}
+	for _, mediaURL := range mediaURLs {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO media_cleanup_outbox (media_url)
+			VALUES ($1)
+			ON CONFLICT (media_url) DO NOTHING
+		`, mediaURL); err != nil {
+			return nil, fmt.Errorf("failed to queue media cleanup: %w", err)
+		}
+	}
+	// DELETE is intentionally unconditional: notes have no matching review row,
+	// and PostgreSQL treats that as a successful zero-row delete.
+	if _, err := tx.Exec(ctx, `DELETE FROM reviews WHERE id = $1`, postID); err != nil {
+		return nil, fmt.Errorf("failed to delete review details: %w", err)
+	}
+	result, err := tx.Exec(ctx, `DELETE FROM posts WHERE id = $1 AND user_id = $2`, postID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete post: %w", err)
+	}
+	if result.RowsAffected() != 1 {
+		return nil, fmt.Errorf("post not found")
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit post deletion: %w", err)
+	}
+	return mediaURLs, nil
 }
 
 func NewPostRepository(db *pgxpool.Pool) *PostRepository {
@@ -70,7 +155,7 @@ func (r *PostRepository) CreateNote(ctx context.Context, userID int, content jso
 }
 
 // CreateReview inserts into posts, reviews, and post_media in a single transaction
-func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID int, rating int, content json.RawMessage, textContent string, mediaURLs []string) (int, error) {
+func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID int, rating float64, content json.RawMessage, textContent string, mediaURLs []string) (int, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %w", err)
@@ -89,7 +174,7 @@ func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID in
 	}
 
 	reviewQuery := `
-		INSERT INTO reviews (post_id, location_id, rating)
+		INSERT INTO reviews (id, location_id, rating)
 		VALUES ($1, $2, $3)`
 
 	_, err = tx.Exec(ctx, reviewQuery, postID, locationID, rating)
@@ -98,9 +183,9 @@ func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID in
 	}
 
 	if len(mediaURLs) > 0 {
-		mediaQuery := `INSERT INTO post_media (post_id, url, type) VALUES ($1, $2, $3)`
-		for _, url := range mediaURLs {
-			_, err = tx.Exec(ctx, mediaQuery, postID, url, "image")
+		mediaQuery := `INSERT INTO post_media (post_id, url, type, display_order) VALUES ($1, $2, $3, $4)`
+		for idx, url := range mediaURLs {
+			_, err = tx.Exec(ctx, mediaQuery, postID, url, "image", idx+1)
 			if err != nil {
 				return 0, fmt.Errorf("failed to insert media: %w", err)
 			}
@@ -115,14 +200,21 @@ func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID in
 }
 
 // GetHomeFeed joins posts, reviews, locations, and post_media into a single struct
-func (r *PostRepository) GetHomeFeed(ctx context.Context, limit, offset int) ([]models.FeedItem, error) {
-	rows, err := r.db.Query(ctx, getHomeFeedSQL, limit, offset)
+func (r *PostRepository) GetHomeFeed(ctx context.Context, limit int, cursor *FeedCursor) (FeedPage, error) {
+	var cursorCreatedAt *time.Time
+	cursorPostID := 0
+	if cursor != nil {
+		cursorCreatedAt = &cursor.CreatedAt
+		cursorPostID = cursor.PostID
+	}
+
+	rows, err := r.db.Query(ctx, getHomeFeedSQL, limit+1, cursorCreatedAt, cursorPostID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query home feed: %w", err)
+		return FeedPage{}, fmt.Errorf("failed to query home feed: %w", err)
 	}
 	defer rows.Close()
 
-	var feed []models.FeedItem
+	feed := make([]models.FeedItem, 0, limit+1)
 
 	for rows.Next() {
 		var item models.FeedItem
@@ -139,24 +231,30 @@ func (r *PostRepository) GetHomeFeed(ctx context.Context, limit, offset int) ([]
 			&item.Rating,
 			&item.LocationID,
 			&item.LocationName,
+			&item.LocationAddress,
 			&mediaJSON,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan feed row: %w", err)
+			return FeedPage{}, fmt.Errorf("failed to scan feed row: %w", err)
 		}
 
 		if err := json.Unmarshal(mediaJSON, &item.Media); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal media json: %w", err)
+			return FeedPage{}, fmt.Errorf("failed to unmarshal media json: %w", err)
 		}
 
 		feed = append(feed, item)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration error: %w", err)
+		return FeedPage{}, fmt.Errorf("rows iteration error: %w", err)
 	}
 
-	return feed, nil
+	hasMore := len(feed) > limit
+	if hasMore {
+		feed = feed[:limit]
+	}
+
+	return FeedPage{Items: feed, HasMore: hasMore}, nil
 }
 
 func (r *PostRepository) GetPostByID(ctx context.Context, postID int) (*models.FeedItem, error) {
@@ -174,6 +272,7 @@ func (r *PostRepository) GetPostByID(ctx context.Context, postID int) (*models.F
 		&item.Rating,
 		&item.LocationID,
 		&item.LocationName,
+		&item.LocationAddress,
 		&mediaJSON,
 	)
 

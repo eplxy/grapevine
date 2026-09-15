@@ -251,6 +251,98 @@ const docTemplate = `{
                 }
             }
         },
+        "/location/autocomplete": {
+            "post": {
+                "description": "Get place predictions based on a text string. Defaults to a circular bias around Montreal.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "location"
+                ],
+                "summary": "Autocomplete places",
+                "parameters": [
+                    {
+                        "description": "Autocomplete query and optional rectangular location bias",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LocationAutocompleteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Google Places Autocomplete response",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LocationAutocompleteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid JSON or missing required fields",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Google Places API failure",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
+        "/location/details": {
+            "post": {
+                "description": "Get coordinates and display data for a Google Place ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "location"
+                ],
+                "summary": "Get place details",
+                "parameters": [
+                    {
+                        "description": "Google Place ID",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LocationDetailsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.LocationDetailsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid JSON or missing required fields",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error - Google Places API failure",
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                }
+            }
+        },
         "/media/upload-url": {
             "get": {
                 "security": [
@@ -346,16 +438,15 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "default": 20,
+                        "default": 10,
                         "description": "Pagination limit",
                         "name": "limit",
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "default": 0,
-                        "description": "Pagination offset",
-                        "name": "offset",
+                        "type": "string",
+                        "description": "Opaque cursor returned by the previous page",
+                        "name": "cursor",
                         "in": "query"
                     }
                 ],
@@ -363,10 +454,8 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.FeedItem"
-                            }
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
@@ -569,10 +658,98 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a note or review and its associated media.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Delete Post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         }
     },
     "definitions": {
+        "handlers.AutocompleteLocationBiasRectangleDTO": {
+            "type": "object",
+            "properties": {
+                "east": {
+                    "type": "number"
+                },
+                "north": {
+                    "type": "number"
+                },
+                "south": {
+                    "type": "number"
+                },
+                "west": {
+                    "type": "number"
+                }
+            }
+        },
         "handlers.CreateNoteRequest": {
             "type": "object",
             "required": [
@@ -613,7 +790,7 @@ const docTemplate = `{
                     }
                 },
                 "rating": {
-                    "type": "integer",
+                    "type": "number",
                     "maximum": 5,
                     "minimum": 1
                 },
@@ -622,13 +799,73 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.LocationAutocompleteRequest": {
+            "type": "object",
+            "required": [
+                "query"
+            ],
+            "properties": {
+                "location_bias": {
+                    "$ref": "#/definitions/handlers.AutocompleteLocationBiasRectangleDTO"
+                },
+                "query": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.LocationAutocompleteResponse": {
+            "type": "object",
+            "properties": {
+                "suggestions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.AutocompleteSuggestion"
+                    }
+                }
+            }
+        },
+        "handlers.LocationDetailsRequest": {
+            "type": "object",
+            "required": [
+                "place_id"
+            ],
+            "properties": {
+                "place_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.LocationDetailsResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "lat": {
+                    "type": "number"
+                },
+                "lng": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "place_id": {
+                    "type": "string"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "handlers.LocationUpsertInfo": {
             "type": "object",
             "required": [
                 "address",
                 "google_place_id",
-                "lat",
-                "lng",
                 "name"
             ],
             "properties": {
@@ -644,10 +881,10 @@ const docTemplate = `{
                 "lng": {
                     "type": "number"
                 },
-                "location_type": {
+                "name": {
                     "type": "string"
                 },
-                "name": {
+                "type": {
                     "type": "string"
                 }
             }
@@ -679,6 +916,47 @@ const docTemplate = `{
                 }
             }
         },
+        "models.AutocompleteSuggestion": {
+            "type": "object",
+            "required": [
+                "address",
+                "name",
+                "place_id"
+            ],
+            "properties": {
+                "address": {
+                    "description": "secondary text from places api response",
+                    "type": "string"
+                },
+                "matches": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "end_offset": {
+                                "type": "integer"
+                            },
+                            "start_offset": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                },
+                "name": {
+                    "description": "primary text from places api response",
+                    "type": "string"
+                },
+                "place_id": {
+                    "type": "string"
+                },
+                "types": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "models.FeedItem": {
             "type": "object",
             "properties": {
@@ -692,6 +970,9 @@ const docTemplate = `{
                     "type": "object"
                 },
                 "created_at": {
+                    "type": "string"
+                },
+                "location_address": {
                     "type": "string"
                 },
                 "location_id": {
@@ -714,7 +995,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rating": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "text_content": {
                     "type": "string"
@@ -724,6 +1005,10 @@ const docTemplate = `{
         "models.MediaItem": {
             "type": "object",
             "properties": {
+                "display_order": {
+                    "description": "1-indexed display order",
+                    "type": "integer"
+                },
                 "media_type": {
                     "description": "\"image\" or \"video\"",
                     "type": "string"

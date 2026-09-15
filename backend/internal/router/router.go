@@ -15,9 +15,14 @@ func SetupRouter(
 	env constants.Environment,
 	authHandler *handlers.AuthHandler,
 	postHandler *handlers.PostHandler,
-	mediaHandler *handlers.MediaHandler) *gin.Engine {
+	mediaHandler *handlers.MediaHandler,
+	locationHandler *handlers.LocationHandler) *gin.Engine {
+
 	router := gin.Default()
+	router.SetTrustedProxies(nil)
 	router.Use(cors.New(getCorsConfig(env)))
+
+	autocompleteLimiter := middleware.NewIPRateLimiter(3, 5)
 
 	authGroup := router.Group("/auth")
 
@@ -33,10 +38,16 @@ func SetupRouter(
 	postGroup.POST("/note", middleware.AuthMiddleware(), postHandler.CreateNoteHandler)
 	postGroup.POST("/review", middleware.AuthMiddleware(), postHandler.CreateReviewHandler)
 	postGroup.GET("/:id", postHandler.GetPostByIDHandler)
+	postGroup.DELETE("/:id", middleware.AuthMiddleware(), postHandler.DeletePostHandler)
 
 	mediaGroup := router.Group("/media")
 
 	mediaGroup.GET("/upload-url", middleware.AuthMiddleware(), mediaHandler.GetUploadURLHandler)
+
+	locationGroup := router.Group("/location")
+
+	locationGroup.POST("/autocomplete", middleware.RateLimitMiddleware(autocompleteLimiter), locationHandler.LocationAutocompleteHandler)
+	locationGroup.POST("/details", middleware.RateLimitMiddleware(autocompleteLimiter), locationHandler.LocationDetailsHandler)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -48,7 +59,7 @@ func getCorsConfig(env constants.Environment) cors.Config {
 	corsConfig := cors.DefaultConfig()
 
 	if env == constants.Production {
-		corsConfig.AllowOrigins = []string{"https://grapevine-xi.vercel.app"}
+		corsConfig.AllowOrigins = []string{"https://grapevine-xi.vercel.app", "https://www.grapevine.food"}
 	} else {
 		corsConfig.AllowOrigins = []string{"http://localhost:5173"}
 	}

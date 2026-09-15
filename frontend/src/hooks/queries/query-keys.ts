@@ -21,8 +21,11 @@ export const userKeys = {
 
 export const postKeys = {
   posts: ["posts"] as const,
-  getFeed: (limit: number, offset: number) => ["feed", limit, offset],
+  feed: ["feed"] as const,
+  getFeed: () => postKeys.feed,
   uploadNote: () => [...postKeys.posts, "upload", "note"] as const,
+  uploadReview: () => [...postKeys.posts, "upload", "review"] as const,
+  deletePost: (postId: number) => [...postKeys.posts, "delete", postId] as const,
 }
 
 export const mediaKeys = {
@@ -32,6 +35,16 @@ export const mediaKeys = {
     "upload",
     file.name,
     file.type,
-    file.lastModified
+    file.lastModified,
   ],
+}
+
+export const locationKeys = {
+  location: ["location"] as const,
+  autocomplete: (query: string) => [
+    ...locationKeys.location,
+    "autocomplete",
+    query,
+  ],
+  details: (placeID: string) => [...locationKeys.location, "details", placeID],
 }

@@ -2,9 +2,9 @@ import {
   useAuthSessionQuery,
   useLogoutMutation,
 } from "@/hooks/queries/auth-queries"
-import { Button } from "../ui/button"
-import type { ComponentPropsWithRef, ReactNode } from "react"
 import { Loader, LogIn, LogOut } from "lucide-react"
+import type { ComponentPropsWithRef, ReactNode } from "react"
+import { Button } from "../ui/button"
 
 type AuthButtonProps = {
   loggedInComponent?: ReactNode

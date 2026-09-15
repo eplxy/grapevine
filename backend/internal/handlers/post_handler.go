@@ -1,15 +1,18 @@
 package handlers
 
 import (
+	"context"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"grapevine/internal/database"
-	"grapevine/internal/models"
 	"grapevine/internal/responses"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,21 +38,31 @@ type CreateNoteRequest struct {
 }
 
 type LocationUpsertInfo struct {
-	GooglePlaceID string  `json:"google_place_id" binding:"required"`
-	Name          string  `json:"name" binding:"required"`
-	Address       string  `json:"address" binding:"required"`
-	LocationType  string  `json:"location_type"`
-	Lat           float64 `json:"lat" binding:"required"`
-	Lng           float64 `json:"lng" binding:"required"`
+	GooglePlaceID string   `json:"google_place_id" binding:"required"`
+	Name          string   `json:"name" binding:"required"`
+	Address       string   `json:"address" binding:"required"`
+	LocationType  string   `json:"type"`
+	Lat           *float64 `json:"lat"`
+	Lng           *float64 `json:"lng"`
 }
 
 type CreateReviewRequest struct {
 	Content     json.RawMessage `json:"content" swaggertype:"object"`
 	TextContent string          `json:"text_content"`
-	Rating      int             `json:"rating" binding:"required,min=1,max=5"`
+	Rating      float64         `json:"rating" binding:"required,min=1,max=5"`
 	MediaURLs   []string        `json:"media_urls"`
 
 	LocationInfo LocationUpsertInfo `json:"location" binding:"required"`
+}
+
+const (
+	defaultFeedLimit = 10
+	maxFeedLimit     = 50
+)
+
+type feedCursorPayload struct {
+	CreatedAt time.Time `json:"created_at"`
+	PostID    int       `json:"post_id"`
 }
 
 // CreateNoteHandler creates a standalone text/media post.
@@ -95,18 +108,13 @@ func (h *PostHandler) CreateNoteHandler(c *gin.Context) {
 		return
 	}
 
-	for _, url := range req.MediaURLs {
-		fileName, err := extractObjectNameFromURL(url)
-
-		if err != nil {
-			responses.WriteError(c, http.StatusInternalServerError, "incorrect_url_format", fmt.Sprintf("Failed to read storage object name from media url while moving out of temp: %s", err.Error()))
+	if err := h.finalizeMedia(c.Request.Context(), req.MediaURLs); err != nil {
+		code := "storage_move_failure"
+		if strings.HasPrefix(err.Error(), "invalid media URL:") {
+			code = "incorrect_url_format"
 		}
-
-		err = h.mediaRepo.MoveMediaFromTmpToPosts(c.Request.Context(), fileName)
-		if err != nil {
-			responses.WriteError(c, http.StatusInternalServerError, "storage_move_failure", fmt.Sprintf("Failed to move media out of temporary folder: %s", err.Error()))
-			return
-		}
+		responses.WriteError(c, http.StatusInternalServerError, code, err.Error())
+		return
 	}
 
 	postID, err := h.postRepo.CreateNote(c.Request.Context(), userID, req.Content, trimmedText, req.MediaURLs)
@@ -159,22 +167,18 @@ func (h *PostHandler) CreateReviewHandler(c *gin.Context) {
 		ctx, locInfo.GooglePlaceID, locInfo.Name, locInfo.Address, locInfo.LocationType, locInfo.Lat, locInfo.Lng,
 	)
 	if err != nil {
+		fmt.Println(err.Error())
 		responses.WriteError(c, http.StatusInternalServerError, "location_error", "Failed to process location data")
 		return
 	}
 
-	for _, url := range req.MediaURLs {
-		fileName, err := extractObjectNameFromURL(url)
-
-		if err != nil {
-			responses.WriteError(c, http.StatusInternalServerError, "incorrect_url_format", fmt.Sprintf("Failed to read storage object name from media url while moving out of temp: %s", err.Error()))
+	if err := h.finalizeMedia(ctx, req.MediaURLs); err != nil {
+		code := "storage_move_failure"
+		if strings.HasPrefix(err.Error(), "invalid media URL:") {
+			code = "incorrect_url_format"
 		}
-
-		err = h.mediaRepo.MoveMediaFromTmpToPosts(ctx, fileName)
-		if err != nil {
-			responses.WriteError(c, http.StatusInternalServerError, "storage_move_failure", fmt.Sprintf("Failed to move media out of temporary folder: %s", err.Error()))
-			return
-		}
+		responses.WriteError(c, http.StatusInternalServerError, code, err.Error())
+		return
 	}
 
 	postID, err := h.postRepo.CreateReview(
@@ -182,6 +186,7 @@ func (h *PostHandler) CreateReviewHandler(c *gin.Context) {
 	)
 
 	if err != nil {
+		fmt.Println(err.Error())
 		responses.WriteError(c, http.StatusInternalServerError, "creation_failed", "Failed to create review")
 		return
 	}
@@ -189,31 +194,97 @@ func (h *PostHandler) CreateReviewHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"post_id": postID, "message": "Review created successfully"})
 }
 
+func (h *PostHandler) finalizeMedia(ctx context.Context, mediaURLs []string) error {
+	for _, rawURL := range mediaURLs {
+		fileName, err := extractObjectNameFromURL(rawURL)
+		if err != nil {
+			return fmt.Errorf("invalid media URL: %w", err)
+		}
+		if err := h.mediaRepo.MoveMediaFromTmpToPosts(ctx, fileName); err != nil {
+			return fmt.Errorf("failed to finalize media %q: %w", fileName, err)
+		}
+	}
+	return nil
+}
+
 // GetHomeFeedHandler fetches the chronological feed of both Notes and Reviews.
 // @Summary      Get Home Feed
 // @Description  Returns paginated posts for the main feed.
 // @Tags         posts
 // @Produce      json
-// @Param        limit query int false "Pagination limit" default(20)
-// @Param        offset query int false "Pagination offset" default(0)
-// @Success      200 {array} models.FeedItem
+// @Param        limit query int false "Pagination limit" default(10)
+// @Param        cursor query string false "Opaque cursor returned by the previous page"
+// @Success      200 {object} map[string]interface{}
 // @Failure      500 {object} map[string]string
 // @Router       /posts [get]
 func (h *PostHandler) GetHomeFeedHandler(c *gin.Context) {
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
-
-	feed, err := h.postRepo.GetHomeFeed(c.Request.Context(), limit, offset)
-	if err != nil {
-		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", fmt.Sprintf("Failed to load feed. err: %s", err))
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", strconv.Itoa(defaultFeedLimit)))
+	if err != nil || limit < 1 || limit > maxFeedLimit {
+		responses.WriteBadRequest(c, "invalid_limit", fmt.Sprintf("limit must be between 1 and %d", maxFeedLimit))
 		return
 	}
 
-	if feed == nil {
-		feed = []models.FeedItem{}
+	cursor, err := decodeFeedCursor(c.Query("cursor"))
+	if err != nil {
+		responses.WriteBadRequest(c, "invalid_cursor", "cursor is invalid")
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": feed})
+	page, err := h.postRepo.GetHomeFeed(c.Request.Context(), limit, cursor)
+	if err != nil {
+		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", fmt.Sprintf("Failed to load feed. %v", err))
+		return
+	}
+
+	nextCursor := ""
+	if page.HasMore && len(page.Items) > 0 {
+		last := page.Items[len(page.Items)-1]
+		nextCursor, err = encodeFeedCursor(database.FeedCursor{
+			CreatedAt: last.CreatedAt,
+			PostID:    last.PostID,
+		})
+		if err != nil {
+			responses.WriteError(c, http.StatusInternalServerError, "cursor_failed", "Failed to create feed cursor.")
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": page.Items,
+		"pagination": gin.H{
+			"has_more":    page.HasMore,
+			"next_cursor": nextCursor,
+		},
+	})
+}
+
+func encodeFeedCursor(cursor database.FeedCursor) (string, error) {
+	payload, err := json.Marshal(feedCursorPayload{CreatedAt: cursor.CreatedAt, PostID: cursor.PostID})
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(payload), nil
+}
+
+func decodeFeedCursor(raw string) (*database.FeedCursor, error) {
+	if raw == "" {
+		return nil, nil
+	}
+
+	payload, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	var decoded feedCursorPayload
+	if err := json.Unmarshal(payload, &decoded); err != nil {
+		return nil, err
+	}
+	if decoded.PostID < 1 || decoded.CreatedAt.IsZero() {
+		return nil, errors.New("cursor fields are invalid")
+	}
+
+	return &database.FeedCursor{CreatedAt: decoded.CreatedAt, PostID: decoded.PostID}, nil
 }
 
 // GetPostByIDHandler fetches a single post (Note or Review) by its ID.
@@ -239,11 +310,59 @@ func (h *PostHandler) GetPostByIDHandler(c *gin.Context) {
 			responses.WriteError(c, http.StatusNotFound, "not_found", "Post does not exist")
 			return
 		}
-		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", fmt.Sprintf("Failed to load post: %s", err.Error()))
+		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", "Failed to load post")
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": post})
+}
+
+// DeletePostHandler deletes a post owned by the authenticated user.
+// @Summary      Delete Post
+// @Description  Deletes a note or review and its associated media.
+// @Tags         posts
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path int true "Post ID"
+// @Success      200 {object} map[string]string
+// @Failure      400,401,404,500 {object} map[string]string
+// @Router       /posts/{id} [delete]
+func (h *PostHandler) DeletePostHandler(c *gin.Context) {
+	userID, err := GetUserIDAsInt(c)
+	if err != nil {
+		responses.WriteError(c, http.StatusUnauthorized, "unauthorized", err.Error())
+		return
+	}
+
+	postID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		responses.WriteBadRequest(c, "invalid_id", "Post ID must be a number")
+		return
+	}
+
+	mediaURLs, err := h.postRepo.DeletePost(c.Request.Context(), postID, userID)
+	if err != nil {
+		if err.Error() == "post not found" {
+			responses.WriteError(c, http.StatusNotFound, "not_found", "Post does not exist")
+			return
+		}
+		responses.WriteError(c, http.StatusInternalServerError, "deletion_failed", "Failed to delete post")
+		return
+	}
+
+	for _, mediaURL := range mediaURLs {
+		fileName, err := extractObjectNameFromURL(mediaURL)
+	if err != nil {
+			responses.WriteError(c, http.StatusInternalServerError, "media_cleanup_failed", err.Error())
+			return
+		}
+		if err := h.mediaRepo.DeleteMedia(c.Request.Context(), fileName); err != nil {
+			responses.WriteError(c, http.StatusInternalServerError, "media_cleanup_failed", err.Error())
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Post deleted successfully"})
 }
 
 func extractObjectNameFromURL(rawURL string) (string, error) {

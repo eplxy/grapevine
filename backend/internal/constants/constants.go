@@ -1,6 +1,11 @@
 package constants
 
-import "errors"
+import (
+	"errors"
+
+	"cloud.google.com/go/maps/places/apiv1/placespb"
+	"google.golang.org/genproto/googleapis/type/latlng"
+)
 
 type Environment int
 
@@ -22,3 +27,17 @@ func EnvironmentStringToInt(envVar string) (Environment, error) {
 		return 0, errors.New("invalid environment passed to APP_ENV")
 	}
 }
+
+// montreal coordinates
+var DEFAULT_AUTOCOMPLETE_AUTOCOMPLETE_BIAS = &placespb.AutocompletePlacesRequest_LocationBias{
+	Type: &placespb.AutocompletePlacesRequest_LocationBias_Circle{
+		Circle: &placespb.Circle{
+			Center: &latlng.LatLng{
+				Latitude: 45.5019, Longitude: -73.5674,
+			},
+			Radius: 5000.0,
+		},
+	},
+}
+
+var SEARCHABLE_LOCATION_PRIMARY_TYPES = []string{"restaurant", "cafe", "bar", "diner", "food"}

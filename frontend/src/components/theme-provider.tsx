@@ -58,24 +58,24 @@ function disableTransitionsTemporarily() {
   }
 }
 
-// function isEditableTarget(target: EventTarget | null) {
-//   if (!(target instanceof HTMLElement)) {
-//     return false
-//   }
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
 
-//   if (target.isContentEditable) {
-//     return true
-//   }
+  if (target.isContentEditable) {
+    return true
+  }
 
-//   const editableParent = target.closest(
-//     "input, textarea, select, [contenteditable='true']"
-//   )
-//   if (editableParent) {
-//     return true
-//   }
+  const editableParent = target.closest(
+    "input, textarea, select, [contenteditable='true']"
+  )
+  if (editableParent) {
+    return true
+  }
 
-//   return false
-// }
+  return false
+}
 
 export function ThemeProvider({
   children,
@@ -143,45 +143,40 @@ export function ThemeProvider({
   }, [theme, applyTheme])
 
   // USE EFFECT FOR D KEY TO TOGGLE THEME
-  // React.useEffect(() => {
-  //   const handleKeyDown = (event: KeyboardEvent) => {
-  //     if (event.repeat) {
-  //       return
-  //     }
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat) {
+        return
+      }
 
-  //     if (event.metaKey || event.ctrlKey || event.altKey) {
-  //       return
-  //     }
+      if (isEditableTarget(event.target)) {
+        return
+      }
 
-  //     if (isEditableTarget(event.target)) {
-  //       return
-  //     }
+      if (event.key.toLowerCase() == "[" && (event.metaKey || event.ctrlKey)) {
+        setThemeState((currentTheme) => {
+          const nextTheme =
+            currentTheme === "dark"
+              ? "light"
+              : currentTheme === "light"
+                ? "dark"
+                : getSystemTheme() === "dark"
+                  ? "light"
+                  : "dark"
 
-  //     if (event.key.toLowerCase() !== "d") {
-  //       return
-  //     }
+          localStorage.setItem(storageKey, nextTheme)
+          return nextTheme
+        })
+      }
+      return
+    }
 
-  //     setThemeState((currentTheme) => {
-  //       const nextTheme =
-  //         currentTheme === "dark"
-  //           ? "light"
-  //           : currentTheme === "light"
-  //             ? "dark"
-  //             : getSystemTheme() === "dark"
-  //               ? "light"
-  //               : "dark"
+    window.addEventListener("keydown", handleKeyDown)
 
-  //       localStorage.setItem(storageKey, nextTheme)
-  //       return nextTheme
-  //     })
-  //   }
-
-  //   window.addEventListener("keydown", handleKeyDown)
-
-  //   return () => {
-  //     window.removeEventListener("keydown", handleKeyDown)
-  //   }
-  // }, [storageKey])
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [storageKey])
 
   React.useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {

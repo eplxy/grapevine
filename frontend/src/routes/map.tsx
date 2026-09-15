@@ -1,3 +1,4 @@
+import UnderConstruction from "@/components/app-navigation/under-contstruction"
 import { createFileRoute } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/map")({
@@ -5,5 +6,5 @@ export const Route = createFileRoute("/map")({
 })
 
 function RouteComponent() {
-  return <div>Hello "/map"!</div>
+  return <UnderConstruction />
 }
