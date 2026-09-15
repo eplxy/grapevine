@@ -208,7 +208,12 @@ export default function ReviewForm() {
             <AlertDialogCancel onClick={() => blocker.reset?.()}>
               Stay on page
             </AlertDialogCancel>
-            <AlertDialogAction onClick={() => blocker.proceed?.()}>
+            <AlertDialogAction
+              onClick={() => {
+                resetReview()
+                blocker.proceed?.()
+              }}
+            >
               Leave page
             </AlertDialogAction>
           </AlertDialogFooter>
