@@ -43,7 +43,7 @@ export default function ReviewForm() {
     !isEditorEmpty ||
     !!selectedLocation ||
     hasMedia ||
-    !reviewMutation.isSuccess
+    !(reviewMutation.isSuccess || reviewMutation.isIdle)
 
   const blocker = useBlocker({
     shouldBlockFn: () => hasUnsavedChanges,
