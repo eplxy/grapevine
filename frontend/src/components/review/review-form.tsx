@@ -40,8 +40,10 @@ export default function ReviewForm() {
   const hasMedia = itemList.length > 0
 
   const hasUnsavedChanges =
-    (!reviewMutation.isPending || !reviewMutation.isSuccess) &&
-    (!isEditorEmpty || !!selectedLocation || hasMedia)
+    !isEditorEmpty ||
+    !!selectedLocation ||
+    hasMedia ||
+    !reviewMutation.isSuccess
 
   const blocker = useBlocker({
     shouldBlockFn: () => hasUnsavedChanges,
