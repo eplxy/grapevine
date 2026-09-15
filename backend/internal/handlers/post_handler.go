@@ -49,7 +49,7 @@ type LocationUpsertInfo struct {
 type CreateReviewRequest struct {
 	Content     json.RawMessage `json:"content" swaggertype:"object"`
 	TextContent string          `json:"text_content"`
-	Rating      int             `json:"rating" binding:"required,min=1,max=5"`
+	Rating      float64         `json:"rating" binding:"required,min=1,max=5"`
 	MediaURLs   []string        `json:"media_urls"`
 
 	LocationInfo LocationUpsertInfo `json:"location" binding:"required"`

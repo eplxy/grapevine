@@ -722,7 +722,7 @@ const docTemplate = `{
                     }
                 },
                 "rating": {
-                    "type": "integer",
+                    "type": "number",
                     "maximum": 5,
                     "minimum": 1
                 },
@@ -927,7 +927,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rating": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "text_content": {
                     "type": "string"

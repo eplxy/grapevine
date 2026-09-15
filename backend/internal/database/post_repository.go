@@ -34,7 +34,7 @@ type FeedPage struct {
 
 type PostDomain interface {
 	CreateNote(ctx context.Context, userID int, content json.RawMessage, textContent string, mediaURLs []string) (int, error)
-	CreateReview(ctx context.Context, userID, locationID int, rating int, content json.RawMessage, text_content string, mediaURLs []string) (int, error)
+	CreateReview(ctx context.Context, userID, locationID int, rating float64, content json.RawMessage, text_content string, mediaURLs []string) (int, error)
 	DeletePost(ctx context.Context, postID, userID int) ([]string, error)
 	GetHomeFeed(ctx context.Context, limit int, cursor *FeedCursor) (FeedPage, error)
 	GetPostByID(ctx context.Context, postID int) (*models.FeedItem, error)
@@ -155,7 +155,7 @@ func (r *PostRepository) CreateNote(ctx context.Context, userID int, content jso
 }
 
 // CreateReview inserts into posts, reviews, and post_media in a single transaction
-func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID int, rating int, content json.RawMessage, textContent string, mediaURLs []string) (int, error) {
+func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID int, rating float64, content json.RawMessage, textContent string, mediaURLs []string) (int, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("failed to begin transaction: %w", err)

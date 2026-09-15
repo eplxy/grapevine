@@ -36,7 +36,7 @@ definitions:
       rating:
         maximum: 5
         minimum: 1
-        type: integer
+        type: number
       text_content:
         type: string
     required:
@@ -174,7 +174,7 @@ definitions:
         description: '"note" or "review"'
         type: string
       rating:
-        type: integer
+        type: number
       text_content:
         type: string
     type: object

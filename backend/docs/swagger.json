@@ -714,7 +714,7 @@
                     }
                 },
                 "rating": {
-                    "type": "integer",
+                    "type": "number",
                     "maximum": 5,
                     "minimum": 1
                 },
@@ -919,7 +919,7 @@
                     "type": "string"
                 },
                 "rating": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "text_content": {
                     "type": "string"
