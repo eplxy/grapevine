@@ -352,7 +352,7 @@ func (h *PostHandler) DeletePostHandler(c *gin.Context) {
 
 	for _, mediaURL := range mediaURLs {
 		fileName, err := extractObjectNameFromURL(mediaURL)
-		if err != nil {
+	if err != nil {
 			responses.WriteError(c, http.StatusInternalServerError, "media_cleanup_failed", err.Error())
 			return
 		}

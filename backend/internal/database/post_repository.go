@@ -41,7 +41,7 @@ type PostDomain interface {
 }
 
 // DeletePost removes an owned post and its dependent rows in one transaction.
-// It returns the finalized media object names for cloud-storage cleanup.
+// Media cleanup is queued in the same transaction before the post is committed.
 func (r *PostRepository) DeletePost(ctx context.Context, postID, userID int) ([]string, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -84,6 +84,15 @@ func (r *PostRepository) DeletePost(ctx context.Context, postID, userID int) ([]
 
 	if _, err := tx.Exec(ctx, `DELETE FROM post_media WHERE post_id = $1`, postID); err != nil {
 		return nil, fmt.Errorf("failed to delete post media: %w", err)
+	}
+	for _, mediaURL := range mediaURLs {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO media_cleanup_outbox (media_url)
+			VALUES ($1)
+			ON CONFLICT (media_url) DO NOTHING
+		`, mediaURL); err != nil {
+			return nil, fmt.Errorf("failed to queue media cleanup: %w", err)
+		}
 	}
 	// DELETE is intentionally unconditional: notes have no matching review row,
 	// and PostgreSQL treats that as a successful zero-row delete.

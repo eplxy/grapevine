@@ -41,6 +41,9 @@ func main() {
 	defer dbpool.Close()
 
 	ctx := context.Background()
+	if err := database.EnsureMediaCleanupOutbox(ctx, dbpool); err != nil {
+		checkErr(err)
+	}
 	gcsClient, err := storage.NewClient(ctx)
 	checkErr(err)
 
@@ -52,6 +55,7 @@ func main() {
 	postRepo := database.NewPostRepository(dbpool)
 	locationRepo := database.NewLocationRepository(dbpool, placesClient)
 	mediaRepo := database.NewMediaRepository(gcsClient, os.Getenv("GCS_BUCKET_NAME"))
+	go database.NewMediaCleanupWorker(dbpool, mediaRepo).Run(ctx)
 
 	env, err := constants.EnvironmentStringToInt(os.Getenv("APP_ENV"))
 	checkErr(err)
