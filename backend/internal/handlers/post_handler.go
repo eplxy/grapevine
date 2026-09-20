@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 )
@@ -55,14 +56,25 @@ type CreateReviewRequest struct {
 	LocationInfo LocationUpsertInfo `json:"location" binding:"required"`
 }
 
+type CreateCommentRequest struct {
+	Content  string `json:"content" binding:"required"`
+	ParentID int    `json:"parent_id"`
+}
+
 const (
 	defaultFeedLimit = 10
 	maxFeedLimit     = 50
+	maxCommentLength = 2000
 )
 
 type feedCursorPayload struct {
 	CreatedAt time.Time `json:"created_at"`
 	PostID    int       `json:"post_id"`
+}
+
+type commentCursorPayload struct {
+	CreatedAt time.Time `json:"created_at"`
+	CommentID int       `json:"comment_id"`
 }
 
 // CreateNoteHandler creates a standalone text/media post.
@@ -317,6 +329,63 @@ func (h *PostHandler) GetPostByIDHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": post})
 }
 
+// GetCommentsHandler fetches paginated plain-text comments for a post.
+// @Summary      Get Post Comments
+// @Description  Returns comments ordered from newest to oldest using keyset pagination.
+// @Tags         comments
+// @Produce      json
+// @Param        id path int true "Post ID"
+// @Param        limit query int false "Pagination limit" default(10)
+// @Param        cursor query string false "Opaque cursor returned by the previous page"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400,404,500 {object} map[string]string
+// @Router       /posts/{id}/comments [get]
+func (h *PostHandler) GetCommentsHandler(c *gin.Context) {
+	postID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || postID < 1 {
+		responses.WriteBadRequest(c, "invalid_id", "Post ID must be a positive number")
+		return
+	}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", strconv.Itoa(defaultFeedLimit)))
+	if err != nil || limit < 1 || limit > maxFeedLimit {
+		responses.WriteBadRequest(c, "invalid_limit", fmt.Sprintf("limit must be between 1 and %d", maxFeedLimit))
+		return
+	}
+	cursor, err := decodeCommentCursor(c.Query("cursor"))
+	if err != nil {
+		responses.WriteBadRequest(c, "invalid_cursor", "cursor is invalid")
+		return
+	}
+	page, err := h.postRepo.GetComments(c.Request.Context(), postID, limit, cursor)
+	if err != nil {
+		if err.Error() == "post not found" {
+			responses.WriteError(c, http.StatusNotFound, "not_found", "Post does not exist")
+			return
+		}
+		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", "Failed to load comments")
+		return
+	}
+	nextCursor := ""
+	if page.HasMore && len(page.Items) > 0 {
+		last := page.Items[len(page.Items)-1]
+		nextCursor, err = encodeCommentCursor(database.CommentCursor{
+			CreatedAt: last.CreatedAt,
+			CommentID: last.ID,
+		})
+		if err != nil {
+			responses.WriteError(c, http.StatusInternalServerError, "cursor_failed", "Failed to create comments cursor")
+			return
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": page.Items,
+		"pagination": gin.H{
+			"has_more":    page.HasMore,
+			"next_cursor": nextCursor,
+		},
+	})
+}
+
 // DeletePostHandler deletes a post owned by the authenticated user.
 // @Summary      Delete Post
 // @Description  Deletes a note or review and its associated media.
@@ -352,7 +421,7 @@ func (h *PostHandler) DeletePostHandler(c *gin.Context) {
 
 	for _, mediaURL := range mediaURLs {
 		fileName, err := extractObjectNameFromURL(mediaURL)
-	if err != nil {
+		if err != nil {
 			responses.WriteError(c, http.StatusInternalServerError, "media_cleanup_failed", err.Error())
 			return
 		}
@@ -363,6 +432,145 @@ func (h *PostHandler) DeletePostHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Post deleted successfully"})
+}
+
+// CreateCommentHandler creates a comment on a post.
+// @Summary      Create Comment
+// @Tags         comments
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "Post ID"
+// @Param        request body CreateCommentRequest true "Comment payload"
+// @Success      201 {object} map[string]interface{}
+// @Failure      400,401,404,500 {object} map[string]string
+// @Router       /posts/{id}/comments [post]
+func (h *PostHandler) CreateCommentHandler(c *gin.Context) {
+	userID, err := GetUserIDAsInt(c)
+	if err != nil {
+		responses.WriteError(c, http.StatusUnauthorized, "unauthorized", err.Error())
+		return
+	}
+	postID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || postID < 1 {
+		responses.WriteBadRequest(c, "invalid_id", "Post ID must be a positive number")
+		return
+	}
+	var req CreateCommentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		responses.WriteBadRequest(c, "invalid_request", "Comment content is required and parent_id must be non-negative")
+		return
+	}
+	content := strings.TrimSpace(req.Content)
+	if err := validateCommentContent(content); err != nil || req.ParentID < 0 {
+		responses.WriteBadRequest(c, "invalid_comment", fmt.Sprintf("Comment must contain between 1 and %d characters and parent_id must be non-negative", maxCommentLength))
+		return
+	}
+	commentID, err := h.postRepo.CreateComment(c.Request.Context(), postID, userID, content, req.ParentID)
+	if err != nil {
+		switch err.Error() {
+		case "post not found", "parent comment not found":
+			responses.WriteError(c, http.StatusNotFound, "not_found", err.Error())
+		default:
+			responses.WriteError(c, http.StatusInternalServerError, "creation_failed", "Failed to create comment")
+		}
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"comment_id": commentID, "message": "Comment created successfully"})
+}
+
+// DeleteCommentHandler deletes a comment owned by the authenticated user.
+// @Summary      Delete Comment
+// @Tags         comments
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path int true "Post ID"
+// @Param        comment_id path int true "Comment ID"
+// @Success      200 {object} map[string]string
+// @Failure      400,401,404,500 {object} map[string]string
+// @Router       /posts/{id}/comments/{comment_id} [delete]
+func (h *PostHandler) DeleteCommentHandler(c *gin.Context) {
+	userID, err := GetUserIDAsInt(c)
+	if err != nil {
+		responses.WriteError(c, http.StatusUnauthorized, "unauthorized", err.Error())
+		return
+	}
+	commentID, err := strconv.Atoi(c.Param("comment_id"))
+	if err != nil || commentID < 1 {
+		responses.WriteBadRequest(c, "invalid_id", "Comment ID must be a positive number")
+		return
+	}
+	postID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || postID < 1 {
+		responses.WriteBadRequest(c, "invalid_id", "Post ID must be a positive number")
+		return
+	}
+	if err := h.postRepo.DeleteComment(c.Request.Context(), postID, commentID, userID); err != nil {
+		if err.Error() == "comment not found" {
+			responses.WriteError(c, http.StatusNotFound, "not_found", "Comment does not exist")
+			return
+		}
+		responses.WriteError(c, http.StatusInternalServerError, "deletion_failed", "Failed to delete comment")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Comment deleted successfully"})
+}
+
+// LikePostHandler likes a post for the authenticated user.
+// @Summary      Like Post
+// @Tags         likes
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path int true "Post ID"
+// @Success      200 {object} map[string]string
+// @Failure      400,401,404,500 {object} map[string]string
+// @Router       /posts/{id}/like [post]
+func (h *PostHandler) LikePostHandler(c *gin.Context) {
+	h.mutatePostLike(c, true)
+}
+
+// UnlikePostHandler removes the authenticated user's like from a post.
+// @Summary      Unlike Post
+// @Tags         likes
+// @Security     BearerAuth
+// @Produce      json
+// @Param        id path int true "Post ID"
+// @Success      200 {object} map[string]string
+// @Failure      400,401,404,500 {object} map[string]string
+// @Router       /posts/{id}/like [delete]
+func (h *PostHandler) UnlikePostHandler(c *gin.Context) {
+	h.mutatePostLike(c, false)
+}
+
+func (h *PostHandler) mutatePostLike(c *gin.Context, like bool) {
+	userID, err := GetUserIDAsInt(c)
+	if err != nil {
+		responses.WriteError(c, http.StatusUnauthorized, "unauthorized", err.Error())
+		return
+	}
+	postID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || postID < 1 {
+		responses.WriteBadRequest(c, "invalid_id", "Post ID must be a positive number")
+		return
+	}
+	if like {
+		err = h.postRepo.LikePost(c.Request.Context(), postID, userID)
+	} else {
+		err = h.postRepo.UnlikePost(c.Request.Context(), postID, userID)
+	}
+	if err != nil {
+		if err.Error() == "post not found" {
+			responses.WriteError(c, http.StatusNotFound, "not_found", "Post does not exist")
+			return
+		}
+		responses.WriteError(c, http.StatusInternalServerError, "like_failed", "Failed to update post like")
+		return
+	}
+	message := "Post liked successfully"
+	if !like {
+		message = "Post unliked successfully"
+	}
+	c.JSON(http.StatusOK, gin.H{"message": message})
 }
 
 func extractObjectNameFromURL(rawURL string) (string, error) {
@@ -379,4 +587,41 @@ func extractObjectNameFromURL(rawURL string) (string, error) {
 	}
 
 	return objectName, nil
+}
+
+func validateCommentContent(content string) error {
+	if strings.TrimSpace(content) == "" {
+		return fmt.Errorf("comment content cannot be empty")
+	}
+	if utf8.RuneCountInString(content) > maxCommentLength {
+		return fmt.Errorf("comment content exceeds %d characters", maxCommentLength)
+	}
+
+	return nil
+}
+
+func encodeCommentCursor(cursor database.CommentCursor) (string, error) {
+	payload, err := json.Marshal(commentCursorPayload{CreatedAt: cursor.CreatedAt, CommentID: cursor.CommentID})
+	if err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(payload), nil
+}
+
+func decodeCommentCursor(raw string) (*database.CommentCursor, error) {
+	if raw == "" {
+		return nil, nil
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil {
+		return nil, err
+	}
+	var decoded commentCursorPayload
+	if err := json.Unmarshal(payload, &decoded); err != nil {
+		return nil, err
+	}
+	if decoded.CommentID < 1 || decoded.CreatedAt.IsZero() {
+		return nil, errors.New("cursor fields are invalid")
+	}
+	return &database.CommentCursor{CreatedAt: decoded.CreatedAt, CommentID: decoded.CommentID}, nil
 }

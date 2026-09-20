@@ -7,11 +7,13 @@ import (
 
 // FeedItem represents a single post (either a note or a review) in the home feed.
 type FeedItem struct {
-	PostID      int             `json:"post_id"`
-	PostType    string          `json:"post_type"` // "note" or "review"
-	Content     json.RawMessage `json:"content" swaggertype:"object"`
-	TextContent string          `json:"text_content"`
-	CreatedAt   time.Time       `json:"created_at"`
+	PostID       int             `json:"post_id"`
+	PostType     string          `json:"post_type"` // "note" or "review"
+	Content      json.RawMessage `json:"content" swaggertype:"object"`
+	TextContent  string          `json:"text_content"`
+	CreatedAt    time.Time       `json:"created_at"`
+	CommentCount int             `json:"comment_count"`
+	LikeCount    int             `json:"like_count"`
 
 	AuthorID   int    `json:"author_id"`
 	AuthorName string `json:"author_name"`

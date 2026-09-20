@@ -18,6 +18,9 @@ var getHomeFeedSQL string
 //go:embed queries/posts/get_post_by_id.sql
 var getPostByIDSQL string
 
+//go:embed queries/posts/get_comments.sql
+var getCommentsSQL string
+
 type PostRepository struct {
 	db *pgxpool.Pool
 }
@@ -32,12 +35,80 @@ type FeedPage struct {
 	HasMore bool
 }
 
+type CommentCursor struct {
+	CreatedAt time.Time
+	CommentID int
+}
+
+type CommentPage struct {
+	Items   []models.Comment
+	HasMore bool
+}
+
 type PostDomain interface {
 	CreateNote(ctx context.Context, userID int, content json.RawMessage, textContent string, mediaURLs []string) (int, error)
 	CreateReview(ctx context.Context, userID, locationID int, rating float64, content json.RawMessage, text_content string, mediaURLs []string) (int, error)
 	DeletePost(ctx context.Context, postID, userID int) ([]string, error)
+	CreateComment(ctx context.Context, postID, userID int, content string, parentID int) (int, error)
+	DeleteComment(ctx context.Context, postID, commentID, userID int) error
+	LikePost(ctx context.Context, postID, userID int) error
+	UnlikePost(ctx context.Context, postID, userID int) error
 	GetHomeFeed(ctx context.Context, limit int, cursor *FeedCursor) (FeedPage, error)
 	GetPostByID(ctx context.Context, postID int) (*models.FeedItem, error)
+	GetComments(ctx context.Context, postID, limit int, cursor *CommentCursor) (CommentPage, error)
+}
+
+func (r *PostRepository) GetComments(ctx context.Context, postID, limit int, cursor *CommentCursor) (CommentPage, error) {
+	var postExists bool
+	if err := r.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1)`, postID).Scan(&postExists); err != nil {
+		return CommentPage{}, fmt.Errorf("failed to verify post: %w", err)
+	}
+	if !postExists {
+		return CommentPage{}, fmt.Errorf("post not found")
+	}
+
+	var cursorCreatedAt *time.Time
+	cursorCommentID := 0
+	if cursor != nil {
+		cursorCreatedAt = &cursor.CreatedAt
+		cursorCommentID = cursor.CommentID
+	}
+
+	rows, err := r.db.Query(ctx, getCommentsSQL, postID, cursorCreatedAt, cursorCommentID, limit+1)
+	if err != nil {
+		return CommentPage{}, fmt.Errorf("failed to query comments: %w", err)
+	}
+	defer rows.Close()
+
+	comments := make([]models.Comment, 0, limit+1)
+	for rows.Next() {
+		var comment models.Comment
+		var parentID *int
+		if err := rows.Scan(
+			&comment.ID,
+			&comment.CreatedAt,
+			&comment.PostID,
+			&comment.UserID,
+			&comment.AuthorName,
+			&comment.Content,
+			&parentID,
+		); err != nil {
+			return CommentPage{}, fmt.Errorf("failed to scan comment: %w", err)
+		}
+		if parentID != nil {
+			comment.ParentID = *parentID
+		}
+		comments = append(comments, comment)
+	}
+	if err := rows.Err(); err != nil {
+		return CommentPage{}, fmt.Errorf("comment rows iteration error: %w", err)
+	}
+
+	hasMore := len(comments) > limit
+	if hasMore {
+		comments = comments[:limit]
+	}
+	return CommentPage{Items: comments, HasMore: hasMore}, nil
 }
 
 // DeletePost removes an owned post and its dependent rows in one transaction.
@@ -99,6 +170,12 @@ func (r *PostRepository) DeletePost(ctx context.Context, postID, userID int) ([]
 	if _, err := tx.Exec(ctx, `DELETE FROM reviews WHERE id = $1`, postID); err != nil {
 		return nil, fmt.Errorf("failed to delete review details: %w", err)
 	}
+	if _, err := tx.Exec(ctx, `DELETE FROM comments WHERE post_id = $1`, postID); err != nil {
+		return nil, fmt.Errorf("failed to delete post comments: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM post_likes WHERE post_id = $1`, postID); err != nil {
+		return nil, fmt.Errorf("failed to delete post likes: %w", err)
+	}
 	result, err := tx.Exec(ctx, `DELETE FROM posts WHERE id = $1 AND user_id = $2`, postID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to delete post: %w", err)
@@ -110,11 +187,92 @@ func (r *PostRepository) DeletePost(ctx context.Context, postID, userID int) ([]
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit post deletion: %w", err)
 	}
+
 	return mediaURLs, nil
 }
 
 func NewPostRepository(db *pgxpool.Pool) *PostRepository {
 	return &PostRepository{db: db}
+}
+
+func (r *PostRepository) CreateComment(ctx context.Context, postID, userID int, content string, parentID int) (int, error) {
+	var exists bool
+	if err := r.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1)`, postID).Scan(&exists); err != nil {
+		return 0, fmt.Errorf("failed to verify post: %w", err)
+	}
+	if !exists {
+		return 0, fmt.Errorf("post not found")
+	}
+
+	var commentID int
+	var err error
+	if parentID > 0 {
+		err = r.db.QueryRow(ctx, `
+			INSERT INTO comments (post_id, user_id, content, parent_id)
+			SELECT $1, $2, $3, $4
+			WHERE EXISTS (
+				SELECT 1 FROM comments WHERE id = $4 AND post_id = $1
+			)
+			RETURNING id
+		`, postID, userID, content, parentID).Scan(&commentID)
+		if err == pgx.ErrNoRows {
+			return 0, fmt.Errorf("parent comment not found")
+		}
+	} else {
+		err = r.db.QueryRow(ctx, `
+			INSERT INTO comments (post_id, user_id, content)
+			VALUES ($1, $2, $3)
+			RETURNING id
+		`, postID, userID, content).Scan(&commentID)
+	}
+	if err != nil {
+		return 0, fmt.Errorf("failed to create comment: %w", err)
+	}
+	return commentID, nil
+}
+
+func (r *PostRepository) DeleteComment(ctx context.Context, postID, commentID, userID int) error {
+	result, err := r.db.Exec(ctx, `DELETE FROM comments WHERE id = $1 AND post_id = $2 AND user_id = $3`, commentID, postID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete comment: %w", err)
+	}
+	if result.RowsAffected() != 1 {
+		return fmt.Errorf("comment not found")
+	}
+	return nil
+}
+
+func (r *PostRepository) LikePost(ctx context.Context, postID, userID int) error {
+	var exists bool
+	if err := r.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1)`, postID).Scan(&exists); err != nil {
+		return fmt.Errorf("failed to verify post: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("post not found")
+	}
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO post_likes (post_id, user_id)
+		VALUES ($1, $2)
+		ON CONFLICT (post_id, user_id) DO NOTHING
+	`, postID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to like post: %w", err)
+	}
+	return nil
+}
+
+func (r *PostRepository) UnlikePost(ctx context.Context, postID, userID int) error {
+	var exists bool
+	if err := r.db.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM posts WHERE id = $1)`, postID).Scan(&exists); err != nil {
+		return fmt.Errorf("failed to verify post: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("post not found")
+	}
+	if _, err := r.db.Exec(ctx, `DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2`, postID, userID); err != nil {
+		return fmt.Errorf("failed to unlike post: %w", err)
+	}
+	return nil
 }
 
 // CreateNote inserts into posts and post_media
@@ -232,6 +390,8 @@ func (r *PostRepository) GetHomeFeed(ctx context.Context, limit int, cursor *Fee
 			&item.LocationID,
 			&item.LocationName,
 			&item.LocationAddress,
+			&item.CommentCount,
+			&item.LikeCount,
 			&mediaJSON,
 		)
 		if err != nil {
@@ -273,6 +433,8 @@ func (r *PostRepository) GetPostByID(ctx context.Context, postID int) (*models.F
 		&item.LocationID,
 		&item.LocationName,
 		&item.LocationAddress,
+		&item.CommentCount,
+		&item.LikeCount,
 		&mediaJSON,
 	)
 
