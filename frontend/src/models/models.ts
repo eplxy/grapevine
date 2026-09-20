@@ -12,6 +12,8 @@ export interface FeedItemModel {
   location_id?: number
   location_name?: string
   location_address?: string
+  comment_count: number
+  like_count: number
 
   media?: MediaItem[]
 }

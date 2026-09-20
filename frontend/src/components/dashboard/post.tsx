@@ -5,7 +5,7 @@ import StarterKit from "@tiptap/starter-kit"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import { useMemo, useState, useEffect, useRef } from "react"
-import { Card, CardContent, CardHeader } from "../ui/card"
+import { Card, CardContent, CardFooter, CardHeader } from "../ui/card"
 import {
   Carousel,
   CarouselContent,
@@ -16,7 +16,7 @@ import UserAvatar from "../user-avatar"
 import PostCarouselImage from "./post-carousel-image"
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 import StarRating from "../review/star-rating"
-import { Edit, MoreHorizontal, Trash } from "lucide-react"
+import { Edit, Heart, MessageCircle, MoreHorizontal, Trash } from "lucide-react"
 import { Button } from "../ui/button"
 import {
   Popover,
@@ -35,8 +35,6 @@ dayjs.extend(relativeTime)
 
 export default function Post(props: PostProps) {
   const { feedItem } = props
-  // const likeCount = 0
-  // const replyCount = 0
 
   const [isExpanded, setIsExpanded] = useState(false)
   const [hasMoreContent, setHasMoreContent] = useState(false)
@@ -130,17 +128,17 @@ export default function Post(props: PostProps) {
           <MediaCarousel items={feedItem.media} />
         )}
       </CardContent>
-      {/*<CardFooter className="flex gap-6 text-muted-foreground">
+      <CardFooter className="flex gap-6 text-muted-foreground">
         <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
-          <Heart className="h-5 w-5" /> {likeCount}
+          <Heart className="h-5 w-5" /> {feedItem.like_count}
         </button>
         <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
-          <MessageCircle className="h-5 w-5" /> {replyCount}
+          <MessageCircle className="h-5 w-5" /> {feedItem.comment_count}
         </button>
-        <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
+        {/*<button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
           <Share className="h-5 w-5" />
-        </button>
-      </CardFooter>*/}
+        </button>*/}
+      </CardFooter>
     </Card>
   )
 }
