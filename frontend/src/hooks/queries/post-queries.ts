@@ -156,12 +156,6 @@ export const useLikePostMutation = (postId: number) => {
         .url(`/posts/${postId}/like`)
         .post()
         .json<PostUploadReviewResponseModel>(),
-    onSuccess: () => {
-      toast.warning("Post liked")
-    },
-    onError: (err) => {
-      toast.error(err.message)
-    },
   })
 }
 
@@ -173,11 +167,5 @@ export const useUnlikePostMutation = (postId: number) => {
         .url(`/posts/${postId}/unlike`)
         .post()
         .json<PostUploadReviewResponseModel>(),
-    onSuccess: () => {
-      toast.warning("Post unliked")
-    },
-    onError: (err) => {
-      toast.error(err.message)
-    },
   })
 }
