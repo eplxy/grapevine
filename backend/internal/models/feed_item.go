@@ -14,6 +14,7 @@ type FeedItem struct {
 	CreatedAt    time.Time       `json:"created_at"`
 	CommentCount int             `json:"comment_count"`
 	LikeCount    int             `json:"like_count"`
+	IsLikedByMe  bool            `json:"is_liked_by_me"`
 
 	AuthorID   int    `json:"author_id"`
 	AuthorName string `json:"author_name"`

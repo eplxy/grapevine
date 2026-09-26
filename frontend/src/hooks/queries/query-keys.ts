@@ -26,6 +26,8 @@ export const postKeys = {
   uploadNote: () => [...postKeys.posts, "upload", "note"] as const,
   uploadReview: () => [...postKeys.posts, "upload", "review"] as const,
   deletePost: (postId: number) => [...postKeys.posts, "delete", postId] as const,
+  likePost: (postId: number) => [...postKeys.posts, "like", postId] as const,
+  unlikePost: (postId: number) => [...postKeys.posts, "unlike", postId] as const,
 }
 
 export const mediaKeys = {

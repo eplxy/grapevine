@@ -26,6 +26,18 @@ CREATE TABLE IF NOT EXISTS post_likes (
 	user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	CONSTRAINT post_likes_post_user_unique UNIQUE(post_id, user_id)
 );
+DO $$
+BEGIN
+	IF NOT EXISTS (
+		SELECT 1
+		FROM pg_constraint
+		WHERE conname = 'post_likes_post_user_unique'
+	) THEN
+		ALTER TABLE post_likes
+		ADD CONSTRAINT post_likes_post_user_unique
+		UNIQUE (post_id, user_id);
+	END IF;
+END $$;
 `
 
 func EnsureSocialSchema(ctx context.Context, db *pgxpool.Pool) error {

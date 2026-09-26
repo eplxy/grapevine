@@ -1030,8 +1030,10 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "delete": {
+            }
+        },
+        "/posts/{id}/unlike": {
+            "post": {
                 "security": [
                     {
                         "BearerAuth": []
@@ -1359,6 +1361,9 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "is_liked_by_me": {
+                    "type": "boolean"
                 },
                 "like_count": {
                     "type": "integer"

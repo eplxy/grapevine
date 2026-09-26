@@ -25,3 +25,11 @@ func GetUserIDAsInt(c *gin.Context) (int, error) {
 
 	return userID, nil
 }
+
+func getOptionalUserID(c *gin.Context) int {
+	userID, err := GetUserIDAsInt(c)
+	if err != nil {
+		return 0
+	}
+	return userID
+}

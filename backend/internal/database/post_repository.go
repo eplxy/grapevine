@@ -53,8 +53,8 @@ type PostDomain interface {
 	DeleteComment(ctx context.Context, postID, commentID, userID int) error
 	LikePost(ctx context.Context, postID, userID int) error
 	UnlikePost(ctx context.Context, postID, userID int) error
-	GetHomeFeed(ctx context.Context, limit int, cursor *FeedCursor) (FeedPage, error)
-	GetPostByID(ctx context.Context, postID int) (*models.FeedItem, error)
+	GetHomeFeed(ctx context.Context, limit, userID int, cursor *FeedCursor) (FeedPage, error)
+	GetPostByID(ctx context.Context, postID, userID int) (*models.FeedItem, error)
 	GetComments(ctx context.Context, postID, limit int, cursor *CommentCursor) (CommentPage, error)
 }
 
@@ -358,7 +358,7 @@ func (r *PostRepository) CreateReview(ctx context.Context, userID, locationID in
 }
 
 // GetHomeFeed joins posts, reviews, locations, and post_media into a single struct
-func (r *PostRepository) GetHomeFeed(ctx context.Context, limit int, cursor *FeedCursor) (FeedPage, error) {
+func (r *PostRepository) GetHomeFeed(ctx context.Context, limit, userID int, cursor *FeedCursor) (FeedPage, error) {
 	var cursorCreatedAt *time.Time
 	cursorPostID := 0
 	if cursor != nil {
@@ -366,7 +366,7 @@ func (r *PostRepository) GetHomeFeed(ctx context.Context, limit int, cursor *Fee
 		cursorPostID = cursor.PostID
 	}
 
-	rows, err := r.db.Query(ctx, getHomeFeedSQL, limit+1, cursorCreatedAt, cursorPostID)
+	rows, err := r.db.Query(ctx, getHomeFeedSQL, limit+1, cursorCreatedAt, cursorPostID, userID)
 	if err != nil {
 		return FeedPage{}, fmt.Errorf("failed to query home feed: %w", err)
 	}
@@ -392,6 +392,7 @@ func (r *PostRepository) GetHomeFeed(ctx context.Context, limit int, cursor *Fee
 			&item.LocationAddress,
 			&item.CommentCount,
 			&item.LikeCount,
+			&item.IsLikedByMe,
 			&mediaJSON,
 		)
 		if err != nil {
@@ -417,11 +418,11 @@ func (r *PostRepository) GetHomeFeed(ctx context.Context, limit int, cursor *Fee
 	return FeedPage{Items: feed, HasMore: hasMore}, nil
 }
 
-func (r *PostRepository) GetPostByID(ctx context.Context, postID int) (*models.FeedItem, error) {
+func (r *PostRepository) GetPostByID(ctx context.Context, postID, userID int) (*models.FeedItem, error) {
 	var item models.FeedItem
 	var mediaJSON []byte
 
-	err := r.db.QueryRow(ctx, getPostByIDSQL, postID).Scan(
+	err := r.db.QueryRow(ctx, getPostByIDSQL, postID, userID).Scan(
 		&item.PostID,
 		&item.PostType,
 		&item.Content,
@@ -435,6 +436,7 @@ func (r *PostRepository) GetPostByID(ctx context.Context, postID int) (*models.F
 		&item.LocationAddress,
 		&item.CommentCount,
 		&item.LikeCount,
+		&item.IsLikedByMe,
 		&mediaJSON,
 	)
 

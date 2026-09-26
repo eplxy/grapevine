@@ -46,10 +46,10 @@ func (s *postRepoStub) UnlikePost(context.Context, int, int) error {
 	s.liked = false
 	return nil
 }
-func (s *postRepoStub) GetHomeFeed(context.Context, int, *database.FeedCursor) (database.FeedPage, error) {
+func (s *postRepoStub) GetHomeFeed(context.Context, int, int, *database.FeedCursor) (database.FeedPage, error) {
 	return database.FeedPage{}, nil
 }
-func (s *postRepoStub) GetPostByID(context.Context, int) (*models.FeedItem, error) {
+func (s *postRepoStub) GetPostByID(context.Context, int, int) (*models.FeedItem, error) {
 	return nil, nil
 }
 func (s *postRepoStub) GetComments(context.Context, int, int, *database.CommentCursor) (database.CommentPage, error) {

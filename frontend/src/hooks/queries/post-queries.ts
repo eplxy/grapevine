@@ -5,12 +5,12 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query"
-import { postKeys } from "./query-keys"
 import { useNavigate } from "@tanstack/react-router"
+import { postKeys } from "./query-keys"
 
+import type { LocationAutocompleteSuggestion } from "@/models/models"
 import type { JSONContent } from "@tiptap/react"
 import { toast } from "react-toastify"
-import type { LocationAutocompleteSuggestion } from "@/models/models"
 
 const FEED_PAGE_SIZE = 10
 
@@ -29,11 +29,16 @@ export const useFeedInfiniteQuery = () => {
     queryFn: ({ pageParam }) =>
       api
         .url("/posts")
-        .query({ limit: FEED_PAGE_SIZE, ...(pageParam ? { cursor: pageParam } : {}) })
+        .query({
+          limit: FEED_PAGE_SIZE,
+          ...(pageParam ? { cursor: pageParam } : {}),
+        })
         .get()
         .json<FeedPageResponse>(),
     getNextPageParam: (lastPage) =>
-      lastPage.pagination.has_more ? lastPage.pagination.next_cursor : undefined,
+      lastPage.pagination.has_more
+        ? lastPage.pagination.next_cursor
+        : undefined,
     retry: false,
     staleTime: 30_000,
   })
@@ -136,6 +141,40 @@ export const useDeletePostMutation = (postId: number) => {
     onSuccess: (res) => {
       toast.success(res.message)
       queryClient.invalidateQueries({ queryKey: ["feed"] })
+    },
+    onError: (err) => {
+      toast.error(err.message)
+    },
+  })
+}
+
+export const useLikePostMutation = (postId: number) => {
+  return useMutation({
+    mutationKey: postKeys.likePost(postId),
+    mutationFn: () =>
+      api
+        .url(`/posts/${postId}/like`)
+        .post()
+        .json<PostUploadReviewResponseModel>(),
+    onSuccess: () => {
+      toast.warning("Post liked")
+    },
+    onError: (err) => {
+      toast.error(err.message)
+    },
+  })
+}
+
+export const useUnlikePostMutation = (postId: number) => {
+  return useMutation({
+    mutationKey: postKeys.unlikePost(postId),
+    mutationFn: () =>
+      api
+        .url(`/posts/${postId}/unlike`)
+        .post()
+        .json<PostUploadReviewResponseModel>(),
+    onSuccess: () => {
+      toast.warning("Post unliked")
     },
     onError: (err) => {
       toast.error(err.message)

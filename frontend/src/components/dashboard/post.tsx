@@ -26,6 +26,7 @@ import {
 import CancelConfirmationAlertDialog from "../dialog/cancel-confirmation"
 import { useDeletePostMutation } from "@/hooks/queries/post-queries"
 import { useAuthSessionQuery } from "@/hooks/queries/auth-queries"
+import LikeButton from "../buttons/like-button"
 
 type PostProps = {
   feedItem: FeedItemModel
@@ -129,9 +130,8 @@ export default function Post(props: PostProps) {
         )}
       </CardContent>
       <CardFooter className="flex gap-6 text-muted-foreground">
-        <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
-          <Heart className="h-5 w-5" /> {feedItem.like_count}
-        </button>
+
+       <LikeButton feedItem={feedItem}/>
         <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
           <MessageCircle className="h-5 w-5" /> {feedItem.comment_count}
         </button>

@@ -34,15 +34,15 @@ func SetupRouter(
 
 	postGroup := router.Group("/posts")
 
-	postGroup.GET("", postHandler.GetHomeFeedHandler)
+	postGroup.GET("", middleware.OptionalAuthMiddleware(), postHandler.GetHomeFeedHandler)
 	postGroup.POST("/note", middleware.AuthMiddleware(), postHandler.CreateNoteHandler)
 	postGroup.POST("/review", middleware.AuthMiddleware(), postHandler.CreateReviewHandler)
-	postGroup.GET("/:id", postHandler.GetPostByIDHandler)
+	postGroup.GET("/:id", middleware.OptionalAuthMiddleware(), postHandler.GetPostByIDHandler)
 	postGroup.GET("/:id/comments", postHandler.GetCommentsHandler)
 	postGroup.DELETE("/:id", middleware.AuthMiddleware(), postHandler.DeletePostHandler)
 	postGroup.POST("/:id/comments", middleware.AuthMiddleware(), postHandler.CreateCommentHandler)
 	postGroup.POST("/:id/like", middleware.AuthMiddleware(), postHandler.LikePostHandler)
-	postGroup.DELETE("/:id/like", middleware.AuthMiddleware(), postHandler.UnlikePostHandler)
+	postGroup.POST("/:id/unlike", middleware.AuthMiddleware(), postHandler.UnlikePostHandler)
 	postGroup.DELETE("/:id/comments/:comment_id", middleware.AuthMiddleware(), postHandler.DeleteCommentHandler)
 
 	mediaGroup := router.Group("/media")

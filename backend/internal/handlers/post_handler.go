@@ -242,7 +242,7 @@ func (h *PostHandler) GetHomeFeedHandler(c *gin.Context) {
 		return
 	}
 
-	page, err := h.postRepo.GetHomeFeed(c.Request.Context(), limit, cursor)
+	page, err := h.postRepo.GetHomeFeed(c.Request.Context(), limit, getOptionalUserID(c), cursor)
 	if err != nil {
 		responses.WriteError(c, http.StatusInternalServerError, "fetch_failed", fmt.Sprintf("Failed to load feed. %v", err))
 		return
@@ -316,7 +316,7 @@ func (h *PostHandler) GetPostByIDHandler(c *gin.Context) {
 		return
 	}
 
-	post, err := h.postRepo.GetPostByID(c.Request.Context(), postID)
+	post, err := h.postRepo.GetPostByID(c.Request.Context(), postID, getOptionalUserID(c))
 	if err != nil {
 		if err.Error() == "post not found" {
 			responses.WriteError(c, http.StatusNotFound, "not_found", "Post does not exist")
@@ -537,7 +537,7 @@ func (h *PostHandler) LikePostHandler(c *gin.Context) {
 // @Param        id path int true "Post ID"
 // @Success      200 {object} map[string]string
 // @Failure      400,401,404,500 {object} map[string]string
-// @Router       /posts/{id}/like [delete]
+// @Router       /posts/{id}/unlike [post]
 func (h *PostHandler) UnlikePostHandler(c *gin.Context) {
 	h.mutatePostLike(c, false)
 }

@@ -36,6 +36,11 @@ SELECT
 	l.address AS location_address,
 	COALESCE(comment_counts.comment_count, 0) AS comment_count,
 	COALESCE(like_counts.like_count, 0) AS like_count,
+	EXISTS(
+		SELECT 1
+		FROM post_likes pl
+		WHERE pl.post_id = p.id AND pl.user_id = $4
+	) AS is_liked_by_me,
 	COALESCE(
 		(SELECT json_agg(json_build_object('url', pm.url, 'type', pm.type, 'display_order', pm.display_order)
 			ORDER BY pm.display_order)
