@@ -16,13 +16,9 @@ import UserAvatar from "../user-avatar"
 import PostCarouselImage from "./post-carousel-image"
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 import StarRating from "../review/star-rating"
-import { Edit, Heart, MessageCircle, MoreHorizontal, Trash } from "lucide-react"
+import { Edit, MessageCircle, MoreHorizontal, Trash } from "lucide-react"
 import { Button } from "../ui/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../ui/popover"
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
 import CancelConfirmationAlertDialog from "../dialog/cancel-confirmation"
 import { useDeletePostMutation } from "@/hooks/queries/post-queries"
 import { useAuthSessionQuery } from "@/hooks/queries/auth-queries"
@@ -83,7 +79,7 @@ export default function Post(props: PostProps) {
           </div>
         </div>
         <div>
-          <MoreOptionsButton post={feedItem}/>
+          <MoreOptionsButton post={feedItem} />
         </div>
       </CardHeader>
       <CardContent>
@@ -130,8 +126,7 @@ export default function Post(props: PostProps) {
         )}
       </CardContent>
       <CardFooter className="flex gap-6 text-muted-foreground">
-
-       <LikeButton feedItem={feedItem}/>
+        <LikeButton feedItem={feedItem} />
         <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
           <MessageCircle className="h-5 w-5" /> {feedItem.comment_count}
         </button>
@@ -169,7 +164,6 @@ function MediaCarousel({ items }: { items: MediaItem[] }) {
     </Carousel>
   )
 }
-
 
 function MoreOptionsButton({ post }: { post: FeedItemModel }) {
   const deletePostMutation = useDeletePostMutation(post.post_id)
