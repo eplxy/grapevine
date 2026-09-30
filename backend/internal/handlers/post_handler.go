@@ -326,7 +326,7 @@ func (h *PostHandler) GetPostByIDHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": post})
+	c.JSON(http.StatusOK, post)
 }
 
 // GetCommentsHandler fetches paginated plain-text comments for a post.

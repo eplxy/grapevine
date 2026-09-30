@@ -20,14 +20,15 @@ export const userKeys = {
 }
 
 export const postKeys = {
-  posts: ["posts"] as const,
+  post: ["post"] as const,
   feed: ["feed"] as const,
   getFeed: () => postKeys.feed,
-  uploadNote: () => [...postKeys.posts, "upload", "note"] as const,
-  uploadReview: () => [...postKeys.posts, "upload", "review"] as const,
-  deletePost: (postId: number) => [...postKeys.posts, "delete", postId] as const,
-  likePost: (postId: number) => [...postKeys.posts, "like", postId] as const,
-  unlikePost: (postId: number) => [...postKeys.posts, "unlike", postId] as const,
+  getPost: (postId: number) => [postKeys.post, postId] as const,
+  uploadNote: () => [...postKeys.post, "upload", "note"] as const,
+  uploadReview: () => [...postKeys.post, "upload", "review"] as const,
+  deletePost: (postId: number) => [...postKeys.post, "delete", postId] as const,
+  likePost: (postId: number) => [...postKeys.post, "like", postId] as const,
+  unlikePost: (postId: number) => [...postKeys.post, "unlike", postId] as const,
 }
 
 export const mediaKeys = {

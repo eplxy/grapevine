@@ -3,6 +3,7 @@ import type { FeedItemModel } from "@/models/models"
 import {
   useInfiniteQuery,
   useMutation,
+  useQuery,
   useQueryClient,
 } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
@@ -41,6 +42,14 @@ export const useFeedInfiniteQuery = () => {
         : undefined,
     retry: false,
     staleTime: 30_000,
+  })
+}
+
+export const useGetPost = (postId: number) => {
+  return useQuery({
+    queryKey: postKeys.getPost(postId),
+    queryFn: () => api.url(`/posts/${postId}`).get().json<FeedItemModel>(),
+    retry: 3,
   })
 }
 

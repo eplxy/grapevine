@@ -42,7 +42,6 @@ export const useLogoutMutation = () => {
       toast.error(err.message)
     },
     onSettled: () => {
-      console.log("setting setQueryData ")
       setAccessToken("")
       queryClient.setQueryData(userKeys.session(), {
         authenticated: false,
