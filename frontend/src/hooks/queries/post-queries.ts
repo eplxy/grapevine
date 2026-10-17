@@ -1,18 +1,20 @@
 import { api } from "@/lib/api"
-import type { FeedItemModel } from "@/models/models"
+import type { CommentModel, FeedItemModel } from "@/models/models"
 import {
   useInfiniteQuery,
   useMutation,
+  useQuery,
   useQueryClient,
 } from "@tanstack/react-query"
-import { postKeys } from "./query-keys"
 import { useNavigate } from "@tanstack/react-router"
+import { postKeys } from "./query-keys"
 
+import type { LocationAutocompleteSuggestion } from "@/models/models"
 import type { JSONContent } from "@tiptap/react"
 import { toast } from "react-toastify"
-import type { LocationAutocompleteSuggestion } from "@/models/models"
 
 const FEED_PAGE_SIZE = 10
+const COMMENTS_PAGE_SIZE = 10
 
 interface FeedPageResponse {
   data: FeedItemModel[]
@@ -29,13 +31,26 @@ export const useFeedInfiniteQuery = () => {
     queryFn: ({ pageParam }) =>
       api
         .url("/posts")
-        .query({ limit: FEED_PAGE_SIZE, ...(pageParam ? { cursor: pageParam } : {}) })
+        .query({
+          limit: FEED_PAGE_SIZE,
+          ...(pageParam ? { cursor: pageParam } : {}),
+        })
         .get()
         .json<FeedPageResponse>(),
     getNextPageParam: (lastPage) =>
-      lastPage.pagination.has_more ? lastPage.pagination.next_cursor : undefined,
+      lastPage.pagination.has_more
+        ? lastPage.pagination.next_cursor
+        : undefined,
     retry: false,
     staleTime: 30_000,
+  })
+}
+
+export const useGetPost = (postId: number) => {
+  return useQuery({
+    queryKey: postKeys.getPost(postId),
+    queryFn: () => api.url(`/posts/${postId}`).get().json<FeedItemModel>(),
+    retry: 3,
   })
 }
 
@@ -47,6 +62,61 @@ interface PostUploadNoteRequestModel {
 interface PostUploadNoteResponseModel {
   post_id: number
   message: string
+}
+
+interface CommentsPageResponse {
+  data: CommentModel[]
+  pagination: {
+    has_more: boolean
+    next_cursor: string
+  }
+}
+
+export const useCommentsInfiniteQuery = (postId: number) => {
+  return useInfiniteQuery({
+    queryKey: postKeys.getComments(postId),
+    initialPageParam: "",
+    queryFn: ({ pageParam }) =>
+      api
+        .url(`/posts/${postId}/comments`)
+        .query({
+          limit: COMMENTS_PAGE_SIZE,
+          ...(pageParam ? { cursor: pageParam } : {}),
+        })
+        .get()
+        .json<CommentsPageResponse>(),
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.has_more
+        ? lastPage.pagination.next_cursor
+        : undefined,
+    retry: false,
+  })
+}
+
+interface CreateCommentResponse {
+  comment_id: number
+  message: string
+}
+
+export const useCreateCommentMutation = (postId: number) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationKey: [...postKeys.getComments(postId), "create"],
+    mutationFn: (content: string) =>
+      api
+        .url(`/posts/${postId}/comments`)
+        .post({ content, parent_id: 0 })
+        .json<CreateCommentResponse>(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: postKeys.getComments(postId),
+      })
+    },
+    onError: (err) => {
+      toast.error(err.message)
+    },
+  })
 }
 
 export const useUploadNoteMutation = () => {
@@ -140,5 +210,27 @@ export const useDeletePostMutation = (postId: number) => {
     onError: (err) => {
       toast.error(err.message)
     },
+  })
+}
+
+export const useLikePostMutation = (postId: number) => {
+  return useMutation({
+    mutationKey: postKeys.likePost(postId),
+    mutationFn: () =>
+      api
+        .url(`/posts/${postId}/like`)
+        .post()
+        .json<PostUploadReviewResponseModel>(),
+  })
+}
+
+export const useUnlikePostMutation = (postId: number) => {
+  return useMutation({
+    mutationKey: postKeys.unlikePost(postId),
+    mutationFn: () =>
+      api
+        .url(`/posts/${postId}/unlike`)
+        .post()
+        .json<PostUploadReviewResponseModel>(),
   })
 }

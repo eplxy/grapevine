@@ -12,8 +12,21 @@ export interface FeedItemModel {
   location_id?: number
   location_name?: string
   location_address?: string
+  comment_count: number
+  like_count: number
+  is_liked_by_me: boolean
 
   media?: MediaItem[]
+}
+
+export interface CommentModel {
+  id: number
+  created_at: string
+  post_id: number
+  user_id: number
+  author_name: string
+  content: string
+  parent_id: number
 }
 
 export interface MediaItem {

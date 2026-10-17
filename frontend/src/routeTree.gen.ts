@@ -9,32 +9,38 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as MapRouteImport } from './routes/map'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as ReviewNewRouteImport } from './routes/review/new'
+import { Route as AppProfileRouteImport } from './routes/_app/profile'
+import { Route as AppMapRouteImport } from './routes/_app/map'
 import { Route as authRegisterRouteImport } from './routes/(auth)/register'
 import { Route as authLoginRouteImport } from './routes/(auth)/login'
+import { Route as AppPostPostIdRouteImport } from './routes/_app/post.$postId'
 
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MapRoute = MapRouteImport.update({
-  id: '/map',
-  path: '/map',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
 const ReviewNewRoute = ReviewNewRouteImport.update({
   id: '/review/new',
   path: '/review/new',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMapRoute = AppMapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => AppRoute,
 } as any)
 const authRegisterRoute = authRegisterRouteImport.update({
   id: '/(auth)/register',
@@ -46,51 +52,74 @@ const authLoginRoute = authLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppPostPostIdRoute = AppPostPostIdRouteImport.update({
+  id: '/post/$postId',
+  path: '/post/$postId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/map': typeof MapRoute
-  '/profile': typeof ProfileRoute
+  '/': typeof AppIndexRoute
   '/login': typeof authLoginRoute
   '/register': typeof authRegisterRoute
+  '/map': typeof AppMapRoute
+  '/profile': typeof AppProfileRoute
   '/review/new': typeof ReviewNewRoute
+  '/post/$postId': typeof AppPostPostIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/map': typeof MapRoute
-  '/profile': typeof ProfileRoute
   '/login': typeof authLoginRoute
   '/register': typeof authRegisterRoute
+  '/map': typeof AppMapRoute
+  '/profile': typeof AppProfileRoute
   '/review/new': typeof ReviewNewRoute
+  '/': typeof AppIndexRoute
+  '/post/$postId': typeof AppPostPostIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/map': typeof MapRoute
-  '/profile': typeof ProfileRoute
+  '/_app': typeof AppRouteWithChildren
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/register': typeof authRegisterRoute
+  '/_app/map': typeof AppMapRoute
+  '/_app/profile': typeof AppProfileRoute
   '/review/new': typeof ReviewNewRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/post/$postId': typeof AppPostPostIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/map' | '/profile' | '/login' | '/register' | '/review/new'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/map' | '/profile' | '/login' | '/register' | '/review/new'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
+    | '/login'
+    | '/register'
     | '/map'
     | '/profile'
+    | '/review/new'
+    | '/post/$postId'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/login'
+    | '/register'
+    | '/map'
+    | '/profile'
+    | '/review/new'
+    | '/'
+    | '/post/$postId'
+  id:
+    | '__root__'
+    | '/_app'
     | '/(auth)/login'
     | '/(auth)/register'
+    | '/_app/map'
+    | '/_app/profile'
     | '/review/new'
+    | '/_app/'
+    | '/_app/post/$postId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  MapRoute: typeof MapRoute
-  ProfileRoute: typeof ProfileRoute
+  AppRoute: typeof AppRouteWithChildren
   authLoginRoute: typeof authLoginRoute
   authRegisterRoute: typeof authRegisterRoute
   ReviewNewRoute: typeof ReviewNewRoute
@@ -98,26 +127,19 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/map': {
-      id: '/map'
-      path: '/map'
-      fullPath: '/map'
-      preLoaderRoute: typeof MapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/review/new': {
       id: '/review/new'
@@ -125,6 +147,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/review/new'
       preLoaderRoute: typeof ReviewNewRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/map': {
+      id: '/_app/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof AppMapRouteImport
+      parentRoute: typeof AppRoute
     }
     '/(auth)/register': {
       id: '/(auth)/register'
@@ -140,13 +176,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/post/$postId': {
+      id: '/_app/post/$postId'
+      path: '/post/$postId'
+      fullPath: '/post/$postId'
+      preLoaderRoute: typeof AppPostPostIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppMapRoute: typeof AppMapRoute
+  AppProfileRoute: typeof AppProfileRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppPostPostIdRoute: typeof AppPostPostIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppMapRoute: AppMapRoute,
+  AppProfileRoute: AppProfileRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppPostPostIdRoute: AppPostPostIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  MapRoute: MapRoute,
-  ProfileRoute: ProfileRoute,
+  AppRoute: AppRouteWithChildren,
   authLoginRoute: authLoginRoute,
   authRegisterRoute: authRegisterRoute,
   ReviewNewRoute: ReviewNewRoute,

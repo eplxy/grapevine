@@ -41,7 +41,6 @@ export default function LocationAutocomplete({
     )
     setIsInputFocused(false)
     setInput((prev: string) => suggestion?.name || prev)
-    console.log(placeID, suggestion)
   }
 
   const handleInputClicked = () => {

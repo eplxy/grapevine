@@ -44,6 +44,9 @@ func main() {
 	if err := database.EnsureMediaCleanupOutbox(ctx, dbpool); err != nil {
 		checkErr(err)
 	}
+	if err := database.EnsureSocialSchema(ctx, dbpool); err != nil {
+		checkErr(err)
+	}
 	gcsClient, err := storage.NewClient(ctx)
 	checkErr(err)
 

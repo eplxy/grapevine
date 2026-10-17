@@ -1,31 +1,29 @@
+import { useAuthSessionQuery } from "@/hooks/queries/auth-queries"
+import { useDeletePostMutation } from "@/hooks/queries/post-queries"
 import { PostType, type FeedItemModel, type MediaItem } from "@/models/models"
 import { VIEWER_CLASSES } from "@/styles/styles"
+import { useNavigate } from "@tanstack/react-router"
 import { generateHTML } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
-import { useMemo, useState, useEffect, useRef } from "react"
-import { Card, CardContent, CardHeader } from "../ui/card"
+import { Edit, MessageCircle, MoreHorizontal, Trash } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import LikeButton from "../buttons/like-button"
+import CancelConfirmationAlertDialog from "../dialog/cancel-confirmation"
+import StarRating from "../review/star-rating"
+import { Button } from "../ui/button"
+import { Card, CardContent, CardFooter, CardHeader } from "../ui/card"
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNavigation,
 } from "../ui/carousel"
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover"
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 import UserAvatar from "../user-avatar"
 import PostCarouselImage from "./post-carousel-image"
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
-import StarRating from "../review/star-rating"
-import { Edit, MoreHorizontal, Trash } from "lucide-react"
-import { Button } from "../ui/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../ui/popover"
-import CancelConfirmationAlertDialog from "../dialog/cancel-confirmation"
-import { useDeletePostMutation } from "@/hooks/queries/post-queries"
-import { useAuthSessionQuery } from "@/hooks/queries/auth-queries"
 
 type PostProps = {
   feedItem: FeedItemModel
@@ -34,9 +32,9 @@ type PostProps = {
 dayjs.extend(relativeTime)
 
 export default function Post(props: PostProps) {
+  const isLoggedIn = useAuthSessionQuery().data?.authenticated
   const { feedItem } = props
-  // const likeCount = 0
-  // const replyCount = 0
+  const navigate = useNavigate()
 
   const [isExpanded, setIsExpanded] = useState(false)
   const [hasMoreContent, setHasMoreContent] = useState(false)
@@ -66,8 +64,54 @@ export default function Post(props: PostProps) {
     if (wasExpanded) element.classList.remove("line-clamp-4")
   }, [html, isExpanded])
 
+  const navigateToPost = () => {
+    void navigate({
+      to: "/post/$postId",
+      params: { postId: String(feedItem.post_id) },
+    })
+  }
+
+  const handleCardClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target
+
+    if (
+      target instanceof Element &&
+      target.closest(
+        "button, a, input, textarea, select, [role='button'], [data-no-post-link]"
+      )
+    ) {
+      return
+    }
+
+    navigateToPost()
+  }
+
+  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = event.target
+
+    if (
+      target instanceof Element &&
+      target.closest(
+        "button, a, input, textarea, select, [role='button'], [data-no-post-link]"
+      )
+    ) {
+      return
+    }
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault()
+      navigateToPost()
+    }
+  }
+
   return (
-    <Card className="border-b border-none pb-4 shadow-none">
+    <Card
+      className="cursor-pointer border-b border-none pb-4 shadow-none"
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      role="link"
+      tabIndex={0}
+    >
       <CardHeader className="flex flex-row justify-between">
         <div className="flex flex-row items-center gap-4">
           <UserAvatar username={props.feedItem.author_name} />
@@ -84,7 +128,7 @@ export default function Post(props: PostProps) {
           </div>
         </div>
         <div>
-          <MoreOptionsButton post={feedItem}/>
+          <MoreOptionsButton post={feedItem} />
         </div>
       </CardHeader>
       <CardContent>
@@ -130,22 +174,20 @@ export default function Post(props: PostProps) {
           <MediaCarousel items={feedItem.media} />
         )}
       </CardContent>
-      {/*<CardFooter className="flex gap-6 text-muted-foreground">
-        <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
-          <Heart className="h-5 w-5" /> {likeCount}
+      <CardFooter className="flex gap-6 text-muted-foreground">
+        <LikeButton feedItem={feedItem} disabled={!isLoggedIn} />
+        <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground" onClick={navigateToPost}>
+          <MessageCircle className="h-5 w-5" /> {feedItem.comment_count}
         </button>
-        <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
-          <MessageCircle className="h-5 w-5" /> {replyCount}
-        </button>
-        <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
+        {/*<button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
           <Share className="h-5 w-5" />
-        </button>
-      </CardFooter>*/}
+        </button>*/}
+      </CardFooter>
     </Card>
   )
 }
 
-function MediaCarousel({ items }: { items: MediaItem[] }) {
+export function MediaCarousel({ items }: { items: MediaItem[] }) {
   const [ratios, setRatios] = useState<number[]>([])
   const minRatio = ratios.length > 0 ? Math.min(...ratios) : 1
   const dynamicRatio = minRatio < 1 ? 1 : minRatio
@@ -171,7 +213,6 @@ function MediaCarousel({ items }: { items: MediaItem[] }) {
     </Carousel>
   )
 }
-
 
 function MoreOptionsButton({ post }: { post: FeedItemModel }) {
   const deletePostMutation = useDeletePostMutation(post.post_id)

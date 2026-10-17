@@ -23,7 +23,7 @@ export default function CooldownButton(props: CooldownButtonProps) {
   const isDisabled = disabled || onCooldown
 
   const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
-    if (!!onClick) onClick(e)
+    if (onClick) onClick(e)
     setOnCooldown(true)
     setTimeout(() => setOnCooldown(false), toMilliseconds(cooldownProp, unit))
   }
