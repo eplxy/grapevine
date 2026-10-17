@@ -37,7 +37,7 @@ export const useLoginMutation = () => {
           .post(body)
           .json<PostLoginResponseModel>()
       } catch (err) {
-        throw new Error(getErrorMessage(err))
+        throw new Error(getErrorMessage(err), { cause: err })
       }
     },
     onSuccess: ({ access_token }) => {
@@ -59,7 +59,7 @@ export const useRegisterMutation = () => {
           .post(body)
           .json<PostRegisterResponseModel>()
       } catch (err) {
-        throw new Error(getErrorMessage(err))
+        throw new Error(getErrorMessage(err), { cause: err })
       }
     },
     onSuccess: () => {
