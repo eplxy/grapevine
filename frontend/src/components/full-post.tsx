@@ -1,4 +1,4 @@
-import type { FeedItemModel } from "@/models/models"
+import { PostType, type FeedItemModel } from "@/models/models"
 import { VIEWER_CLASSES } from "@/styles/styles"
 import { generateHTML } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
@@ -8,6 +8,7 @@ import relativeTime from "dayjs/plugin/relativeTime"
 import { useMemo } from "react"
 import { MediaCarousel } from "./dashboard/post"
 import UserAvatar from "./user-avatar"
+import StarRating from "./review/star-rating"
 
 export interface FullPostProps {
   post: FeedItemModel
@@ -42,6 +43,9 @@ export default function FullPost(props: FullPostProps) {
           </span>
         </div>
       </div>
+      {props.post.post_type === PostType.Review && (
+        <ReviewHeader post={props.post} />
+      )}
       <div
         className={clsx(VIEWER_CLASSES)}
         dangerouslySetInnerHTML={{ __html: html }}
@@ -49,6 +53,24 @@ export default function FullPost(props: FullPostProps) {
       {props.post.media && props.post.media.length > 0 && (
         <MediaCarousel items={props.post.media} />
       )}
+    </div>
+  )
+}
+
+function ReviewHeader(props: { post: FeedItemModel }) {
+  return (
+    <div className="flex flex-row justify-between pb-2 items-start">
+      <div className="flex flex-col items-start">
+        <span className="text-left text-lg font-semibold">
+          {props.post.location_name}
+        </span>
+        {props.post.rating && (
+          <span className="text-sm text-muted-foreground">
+            Rating: {props.post.rating}/5
+          </span>
+        )}
+      </div>
+      <StarRating rating={props.post.rating || 0} displayOnly size="md" hideLabel/>
     </div>
   )
 }

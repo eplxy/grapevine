@@ -38,7 +38,11 @@ export default function LikeButton(props: LikeButtonProps) {
         disabled={props.disabled}
       >
         <Heart
-          className={clsx("h-5 w-5", { "fill-red-400 text-red-400": liked })}
+          className={clsx(
+            "h-5 w-5",
+            { "fill-red-400 text-red-400": liked },
+            { "cursor-auto text-muted-foreground": props.disabled }
+          )}
         />
       </button>
       <button>{likeCount}</button>
