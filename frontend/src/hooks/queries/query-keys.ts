@@ -24,6 +24,7 @@ export const postKeys = {
   feed: ["feed"] as const,
   getFeed: () => postKeys.feed,
   getPost: (postId: number) => [postKeys.post, postId] as const,
+  getComments: (postId: number) => [...postKeys.post, postId, "comments"] as const,
   uploadNote: () => [...postKeys.post, "upload", "note"] as const,
   uploadReview: () => [...postKeys.post, "upload", "review"] as const,
   deletePost: (postId: number) => [...postKeys.post, "delete", postId] as const,

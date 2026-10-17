@@ -1,5 +1,5 @@
 import { api } from "@/lib/api"
-import type { FeedItemModel } from "@/models/models"
+import type { CommentModel, FeedItemModel } from "@/models/models"
 import {
   useInfiniteQuery,
   useMutation,
@@ -14,6 +14,7 @@ import type { JSONContent } from "@tiptap/react"
 import { toast } from "react-toastify"
 
 const FEED_PAGE_SIZE = 10
+const COMMENTS_PAGE_SIZE = 10
 
 interface FeedPageResponse {
   data: FeedItemModel[]
@@ -61,6 +62,61 @@ interface PostUploadNoteRequestModel {
 interface PostUploadNoteResponseModel {
   post_id: number
   message: string
+}
+
+interface CommentsPageResponse {
+  data: CommentModel[]
+  pagination: {
+    has_more: boolean
+    next_cursor: string
+  }
+}
+
+export const useCommentsInfiniteQuery = (postId: number) => {
+  return useInfiniteQuery({
+    queryKey: postKeys.getComments(postId),
+    initialPageParam: "",
+    queryFn: ({ pageParam }) =>
+      api
+        .url(`/posts/${postId}/comments`)
+        .query({
+          limit: COMMENTS_PAGE_SIZE,
+          ...(pageParam ? { cursor: pageParam } : {}),
+        })
+        .get()
+        .json<CommentsPageResponse>(),
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.has_more
+        ? lastPage.pagination.next_cursor
+        : undefined,
+    retry: false,
+  })
+}
+
+interface CreateCommentResponse {
+  comment_id: number
+  message: string
+}
+
+export const useCreateCommentMutation = (postId: number) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationKey: [...postKeys.getComments(postId), "create"],
+    mutationFn: (content: string) =>
+      api
+        .url(`/posts/${postId}/comments`)
+        .post({ content, parent_id: 0 })
+        .json<CreateCommentResponse>(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: postKeys.getComments(postId),
+      })
+    },
+    onError: (err) => {
+      toast.error(err.message)
+    },
+  })
 }
 
 export const useUploadNoteMutation = () => {

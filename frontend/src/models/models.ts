@@ -19,6 +19,16 @@ export interface FeedItemModel {
   media?: MediaItem[]
 }
 
+export interface CommentModel {
+  id: number
+  created_at: string
+  post_id: number
+  user_id: number
+  author_name: string
+  content: string
+  parent_id: number
+}
+
 export interface MediaItem {
   url: string
   media_type: string

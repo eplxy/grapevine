@@ -28,7 +28,7 @@ export default function FullPost(props: FullPostProps) {
   }, [props.post.content])
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-row items-center gap-4">
         <UserAvatar username={props.post.author_name} />
         <div className="flex flex-col">

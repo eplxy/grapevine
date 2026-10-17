@@ -176,7 +176,7 @@ export default function Post(props: PostProps) {
       </CardContent>
       <CardFooter className="flex gap-6 text-muted-foreground">
         <LikeButton feedItem={feedItem} disabled={!isLoggedIn} />
-        <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">
+        <button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground" onClick={navigateToPost}>
           <MessageCircle className="h-5 w-5" /> {feedItem.comment_count}
         </button>
         {/*<button className="flex items-center gap-2 text-sm transition-colors hover:text-foreground">

@@ -14,7 +14,7 @@ function RouteComponent() {
     >
       <div className="flex h-dvh w-full flex-col overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto flex w-full max-w-300 justify-center">
+          <div className="mx-auto flex w-full justify-center">
             <AppSidebar />
             <Outlet />
           </div>
